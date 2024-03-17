@@ -18,7 +18,7 @@ class Candidate {
       id: doc.id,
       name: data['name'],
       partyId: data['partyId'],
-      manifesto: data[''],
+      manifesto: data['manifesto'],
     );
   }
 }
