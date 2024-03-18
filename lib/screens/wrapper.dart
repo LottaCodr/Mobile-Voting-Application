@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_voting_application/components/bottom_navbar.dart';
 import 'package:mobile_voting_application/screens/home/home.dart';
 
 class Wrapper extends StatelessWidget {
@@ -6,8 +7,7 @@ class Wrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     //return Home or Authenticate
-    return home();
+    return const BottomNavBar();
   }
 }

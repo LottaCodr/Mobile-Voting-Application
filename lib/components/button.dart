@@ -10,7 +10,7 @@ class Button extends StatelessWidget {
       {super.key,
       required this.text,
       required this.onPressed,
-      this.color = Colors.blue,
+      this.color = const Color.fromARGB(255, 14, 38, 15),
       this.textColor = Colors.white});
 
   @override
