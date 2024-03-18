@@ -17,7 +17,7 @@
 //   }
 // }
 
-import 'package:cloud_firestore/cloud_firestore.dart';
+//import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 Future signIn() async {
@@ -25,8 +25,7 @@ Future signIn() async {
     await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: 'email'.trim(), password: 'password'.trim());
 
-        //add user details
-        
+    //add user details
   }
 }
 
@@ -38,11 +37,11 @@ bool passwordConfirmed() {
   }
 }
 
-Future addUserDetails(String firstName, String lastName, String email, String password) async {
-  await FirebaseFirestore.instance.collection('users').add(
-    'first name' : firstName,
-    'last name'; lastName,
-    'email': email,
-    'password': password
-  );
-}
+// Future addUserDetails(String firstName, String lastName, String email, String password) async {
+//   await FirebaseFirestore.instance.collection('users').add(
+//     'first name' : firstName,
+//     'last name'; lastName,
+//     'email': email,
+//     'password': password
+//   );
+// }

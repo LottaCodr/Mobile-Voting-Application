@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import 'package:firebase_core/firebase_core.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile_voting_application/screens/wrapper.dart';
+import 'package:mobile_voting_application/utilities/colors.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -19,8 +21,18 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Mobile Voting App',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        textTheme: GoogleFonts.montserratTextTheme(
+          Theme.of(context).textTheme,
+        ),
+        primaryColor: CustomColors.primaryColor,
+        hintColor: CustomColors.accentColor,
+        // textTheme:
+        //     const TextTheme(bodyLarge: TextStyle(color: CustomColors.textColor)
+        //         //Define more textstyles if needed
+        //         ),
         useMaterial3: true,
+        colorScheme:
+            ColorScheme.fromSeed(seedColor: CustomColors.backgroundColor),
       ),
       home: const Wrapper(),
     );
