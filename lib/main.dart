@@ -21,15 +21,13 @@ class MyApp extends StatelessWidget {
       title: 'Mobile Voting App',
       theme: ThemeData(
         fontFamily: 'Montserrat',
-        primaryColor: CustomColors.primaryColor,
-        hintColor: CustomColors.accentColor,
-        textTheme:
-            const TextTheme(bodyLarge: TextStyle(color: CustomColors.textColor)
-                //         //Define more textstyles if needed
-                ),
+        primaryColor: MVAColors.primaryColor,
+        hintColor: MVAColors.accentColor,
+        textTheme: const TextTheme(bodyLarge: TextStyle(color: Colors.black)
+            //         //Define more textstyles if needed
+            ),
         useMaterial3: true,
-        colorScheme:
-            ColorScheme.fromSeed(seedColor: CustomColors.backgroundColor),
+        colorScheme: ColorScheme.fromSeed(seedColor: MVAColors.backgroundColor),
       ),
       home: const Wrapper(),
     );
