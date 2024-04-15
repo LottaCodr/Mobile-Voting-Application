@@ -40,6 +40,8 @@ dependencies:
   firebase_auth: ^4.16.0
   get: ^4.6.6
   another_flutter_splash_screen: ^1.2.0
+  easy_search_bar: ^2.5.0
+  flutter_onboarding_slider: ^1.0.11
   
 
 dev_dependencies:

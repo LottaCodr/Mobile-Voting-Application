@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_voting_application/screens/progess_screen.dart';
+import 'package:mobile_voting_application/screens/candidate_screen.dart';
+import 'package:mobile_voting_application/screens/stats_screen.dart';
 import 'package:mobile_voting_application/utilities/colors.dart';
 
 import '../screens/home/home.dart';
@@ -24,7 +25,8 @@ class _BottomNavBarState extends State<BottomNavBar> {
     pages = [
       const Home(),
       const VoteScreen(),
-      const ProgressScreen(),
+      const StatsScreen(),
+      // const ProgressScreen(),
       const ProfileScreen()
     ];
   }
@@ -63,7 +65,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
               selectedIcon:
                   Icon(Icons.show_chart_outlined, color: Colors.white),
               icon: Icon(Icons.show_chart),
-              label: 'progress'),
+              label: 'Statistics'),
           NavigationDestination(
               selectedIcon: SizedBox(
                 width: 25,

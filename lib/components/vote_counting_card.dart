@@ -37,9 +37,9 @@ class VoteCountingCard extends StatelessWidget {
                     width: 10,
                   ),
                   const Text(
-                    'Vote Counting',
+                    '2 days : 40hrs Left',
                     style: TextStyle(
-                        color: MVAColors.textColor,
+                        color: MVAColors.primaryColor,
                         fontSize: 16,
                         fontWeight: FontWeight.bold),
                   ),

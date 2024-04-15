@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:mobile_voting_application/models/candidate_model.dart';
+import 'package:mobile_voting_application/screens/candidate_screen.dart';
 import 'package:mobile_voting_application/utilities/colors.dart';
 
 import '../components/election_card.dart';
@@ -48,21 +50,31 @@ class _VoteScreenState extends State<VoteScreen> {
                         controller: TextEditingController(),
                         keyboardType: TextInputType.text,
                         textCapitalization: TextCapitalization.none,
-                        decoration:
-                            const InputDecoration(icon: Icon(Icons.search)),
+                        decoration: InputDecoration(
+                            hintText: 'Search for candidate',
+                            icon: Icon(Icons.search)),
                       )
                     ],
                   ),
                 ),
                 Container(
-                  decoration: BoxDecoration(color: MVAColors.backgroundColor),
+                  decoration:
+                      const BoxDecoration(color: MVAColors.backgroundColor),
                   height: MediaQuery.of(context).size.height,
                   child: ListView.builder(
                     itemCount: myCandidates.length,
                     itemBuilder: (context, int index) {
-                      return ElectionCard(
-                        candidateName: myCandidates[index].name,
-                        imageUrl: myCandidates[index].imageUrl,
+                      return GestureDetector(
+                        onTap: () {
+                          String name = myCandidates[index].name;
+                          Get.to(CandidateScreen(
+                            name: name,
+                          ));
+                        },
+                        child: ElectionCard(
+                          candidateName: myCandidates[index].name,
+                          imageUrl: myCandidates[index].imageUrl,
+                        ),
                       );
                     },
                   ),

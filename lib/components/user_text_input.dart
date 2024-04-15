@@ -6,10 +6,13 @@ class UserTextInput extends StatelessWidget {
   final String labelName;
   final TextInputType textInputType;
   final TextEditingController textController;
+  final IconData? icon;
   const UserTextInput({
     super.key,
     required this.labelName,
-    required this.textInputType, required this.textController,
+    required this.textInputType,
+    required this.textController,
+    this.icon,
   });
 
   @override
@@ -18,6 +21,9 @@ class UserTextInput extends StatelessWidget {
       children: [
         TextFormField(
           decoration: InputDecoration(
+            focusedBorder: ,
+              suffixIcon: Icon(icon),
+              focusColor: MVAColors.primaryColor,
               border: const OutlineInputBorder(),
               floatingLabelStyle: const TextStyle(
                   fontWeight: FontWeight.bold, color: MVAColors.primaryColor),
