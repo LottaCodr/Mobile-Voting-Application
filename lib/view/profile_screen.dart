@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_voting_application/components/button.dart';
-import 'package:mobile_voting_application/screens/authenticate/sign_in.dart';
+import 'package:mobile_voting_application/view/authenticate/sign_in.dart';
 import 'package:mobile_voting_application/utilities/colors.dart';
 
 class ProfileScreen extends StatefulWidget {

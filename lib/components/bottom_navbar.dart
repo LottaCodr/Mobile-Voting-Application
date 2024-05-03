@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_voting_application/screens/candidate_screen.dart';
-import 'package:mobile_voting_application/screens/stats_screen.dart';
+import 'package:mobile_voting_application/view/candidate_screen.dart';
+import 'package:mobile_voting_application/view/stats_screen.dart';
 import 'package:mobile_voting_application/utilities/colors.dart';
 
-import '../screens/home/home.dart';
-import '../screens/profile_screen.dart';
-import '../screens/vote_screen.dart';
+import '../view/home/home.dart';
+import '../view/profile_screen.dart';
+import '../view/vote_screen.dart';
 
 class BottomNavBar extends StatefulWidget {
   const BottomNavBar({super.key});

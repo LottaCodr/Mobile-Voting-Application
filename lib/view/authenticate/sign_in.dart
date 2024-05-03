@@ -1,9 +1,10 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 //import 'package:get/get.dart';
 import 'package:mobile_voting_application/components/bottom_navbar.dart';
 import 'package:mobile_voting_application/components/button.dart';
 import 'package:mobile_voting_application/components/user_text_input.dart';
-import 'package:mobile_voting_application/screens/authenticate/signup.dart';
+import 'package:mobile_voting_application/view/authenticate/signup.dart';
 //import 'package:mobile_voting_application/screens/candidate_screen.dart';
 //import 'package:mobile_voting_application/screens/stats_screen.dart';
 import 'package:mobile_voting_application/utilities/colors.dart';
@@ -19,6 +20,20 @@ class SignIn extends StatefulWidget {
 class _SignInState extends State<SignIn> {
   // final AuthService _auth = AuthService();
   final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
+  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  void registerNewUser(BuildContext context) async {
+    // final FirebaseUser firebaseUser =
+    //     (await _firebaseAuth.createUserWithEmailAndPassword(
+    //         email: emailController.text, password: passwordController.text)).user;
+    //         if(firebaseUser != null) {
+    //           //save to db
+
+    //         } else {
+    //           //error display
+    //         }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -63,12 +78,15 @@ class _SignInState extends State<SignIn> {
                   UserTextInput(
                       labelName: "Password",
                       textInputType: TextInputType.text,
-                      textController: emailController),
+                      textController: passwordController),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       TextButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          //if(emailController.text.le)
+                          registerNewUser(context);
+                        },
                         child: const Text(
                           'Forgot password?',
                           style: TextStyle(
@@ -80,7 +98,7 @@ class _SignInState extends State<SignIn> {
                       ),
                     ],
                   ),
-                  SizedBox(
+                  const SizedBox(
                     height: 200,
                   ),
                   Button(
@@ -93,7 +111,7 @@ class _SignInState extends State<SignIn> {
                                 builder: (context) => const BottomNavBar()),
                             (route) => false);
                       }),
-                  SizedBox(
+                  const SizedBox(
                     height: 20,
                   ),
                   Row(

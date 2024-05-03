@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_voting_application/components/button.dart';
-import 'package:mobile_voting_application/screens/authenticate/sign_in.dart';
+import 'package:mobile_voting_application/view/authenticate/sign_in.dart';
 import 'package:mobile_voting_application/utilities/colors.dart';
 
 import '../../components/user_text_input.dart';
@@ -195,7 +195,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
                 Button(
                   text: 'Create an Account',
-                  onPressed: () {},
+                  onPressed: () {
+                    //registerNewUser(context);
+                  },
                   color: MVAColors.primaryColor,
                 ),
                 const SizedBox(

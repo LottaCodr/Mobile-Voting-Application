@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:mobile_voting_application/models/candidate_model.dart';
-import 'package:mobile_voting_application/screens/candidate_screen.dart';
+import 'package:mobile_voting_application/view/candidate_screen.dart';
 import 'package:mobile_voting_application/utilities/colors.dart';
 
 import '../components/election_card.dart';

@@ -21,7 +21,7 @@ class UserTextInput extends StatelessWidget {
       children: [
         TextFormField(
           decoration: InputDecoration(
-            focusedBorder: ,
+            //focusedBorder: ,
               suffixIcon: Icon(icon),
               focusColor: MVAColors.primaryColor,
               border: const OutlineInputBorder(),

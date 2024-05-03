@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:get/get_navigation/src/root/get_material_app.dart';
-import 'package:mobile_voting_application/screens/wrapper.dart';
+import 'package:mobile_voting_application/view/wrapper.dart';
 import 'package:mobile_voting_application/utilities/colors.dart';
 import 'firebase_options.dart';
 

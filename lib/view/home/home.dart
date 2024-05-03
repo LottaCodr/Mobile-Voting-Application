@@ -16,10 +16,31 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  PageController pageController = PageController(viewportFraction: 0.9);
+  var _currentPageValue = 0.0;
+  double _scaleFactor = 0.85;
+  double _height = 300;
+
+  @override
+  void initState() {
+    super.initState();
+    pageController.addListener(() {
+      setState(() {
+        _currentPageValue = pageController.page!;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    pageController.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: MVAColors.backgroundColor,
+      //backgroundColor: MVAColors.backgroundColor,
       appBar: AppBar(
         title: const Text(
           "Patriot",
@@ -31,34 +52,45 @@ class _HomeState extends State<Home> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(12),
           child: Center(
               child: Column(
             // mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const VoteCountingCard(),
+              SizedBox(
+                height: 320,
+                child: PageView.builder(
+                    controller: pageController,
+                    itemCount: 5,
+                    itemBuilder: (context, position) {
+                      return VoteCountingCard(
+                        index: position,
+                        currentPageValue: _currentPageValue,
+                        scaleFactor: _scaleFactor,
+                        height: _height,
+                      );
+                    }),
+              ),
               Container(
                 padding: const EdgeInsets.all(20),
                 margin: const EdgeInsets.all(10),
                 width: MediaQuery.of(context).size.width,
                 height: 160,
                 decoration: BoxDecoration(
-                    color: MVAColors.accentColor,
-                    borderRadius: BorderRadius.circular(16)),
+                    color: Colors.red, borderRadius: BorderRadius.circular(16)),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
                       'Report Any Vote Buying',
                       style: TextStyle(
-                          color: MVAColors.textColor,
+                          color: Colors.white,
                           fontSize: 20,
                           fontWeight: FontWeight.w900),
                     ),
                     const Text(
                       'Contact us concerning any illegal vote.',
                       style: TextStyle(
-                          color: MVAColors.textColor,
+                          color: Colors.white,
                           fontSize: 14,
                           fontWeight: FontWeight.w600),
                     ),
@@ -67,13 +99,25 @@ class _HomeState extends State<Home> {
                     ),
                     Container(
                         decoration: BoxDecoration(
-                            color: MVAColors.primaryColor,
+                            color: Colors.white,
                             borderRadius: BorderRadiusDirectional.circular(50)),
-                        width: 100,
+                        width: 160,
                         height: 40,
-                        child: const Icon(
-                          Icons.arrow_forward_outlined,
-                          color: Colors.white,
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            Text(
+                              'Click here',
+                              style: TextStyle(
+                                  color: MVAColors.textColor,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600),
+                            ),
+                            Icon(
+                              Icons.report_problem,
+                              color: Colors.red,
+                            ),
+                          ],
                         )),
                   ],
                 ),
@@ -86,7 +130,7 @@ class _HomeState extends State<Home> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
-                      'Candidates',
+                      'Top Candidates',
                       style:
                           TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
                     ),
@@ -94,7 +138,8 @@ class _HomeState extends State<Home> {
                         onPressed: () {
                           Navigator.pushAndRemoveUntil(
                               context,
-                              MaterialPageRoute(builder: (context) => SignIn()),
+                              MaterialPageRoute(
+                                  builder: (context) => const SignIn()),
                               (route) => false);
                         },
                         child: const Text(
