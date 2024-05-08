@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 
 import 'package:firebase_core/firebase_core.dart';
+import 'package:get/get.dart';
 import 'package:get/get_navigation/src/root/get_material_app.dart';
+import 'package:mobile_voting_application/controllers/election_controller.dart';
 import 'package:mobile_voting_application/view/wrapper.dart';
 import 'package:mobile_voting_application/utilities/colors.dart';
 import 'firebase_options.dart';
 
+import 'package:mobile_voting_application/helpers/dependencies.dart' as dep;
+
 void main() async {
   WidgetsFlutterBinding();
+  await dep.init();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const MyApp());
 }
@@ -17,6 +22,10 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Get.find<ElectionController>().electionDetails();
+
+    print(Get.find<ElectionController>().electionDetails());
+
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Mobile Voting App',

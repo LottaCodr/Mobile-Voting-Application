@@ -24,7 +24,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const VoteCountingCard(),
+                 VoteCountingCard(index: null, scaleFactor: null, currentPageValue: null, height: null,),
                 Container(
                   padding: const EdgeInsets.all(12),
                   child: const Column(

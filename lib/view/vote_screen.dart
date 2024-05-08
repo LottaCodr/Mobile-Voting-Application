@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:mobile_voting_application/components/searchbar.dart';
 import 'package:mobile_voting_application/models/candidate_model.dart';
 import 'package:mobile_voting_application/view/candidate_screen.dart';
 import 'package:mobile_voting_application/utilities/colors.dart';
@@ -14,6 +15,18 @@ class VoteScreen extends StatefulWidget {
 }
 
 class _VoteScreenState extends State<VoteScreen> {
+  List<String> data = ['Mr. Barka', 'Worthy', 'Jiggy', 'Emmanuel', 'Peter Obi'];
+
+  List<String> searchResults = [];
+
+  void onQueryChanged(String query) {
+    setState(() {
+      searchResults = data
+          .where((item) => item.toLowerCase().contains(query.toLowerCase()))
+          .toList();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -33,27 +46,21 @@ class _VoteScreenState extends State<VoteScreen> {
                 Container(
                   width: MediaQuery.of(context).size.width,
                   padding: const EdgeInsets.all(20),
-                  child: Column(
+                  child: const Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'President',
                         style: TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 24),
                       ),
-                      const Text(
+                      Text(
                         'Presidential Election',
                         style: TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 14),
                       ),
-                      TextField(
-                        controller: TextEditingController(),
-                        keyboardType: TextInputType.text,
-                        textCapitalization: TextCapitalization.none,
-                        decoration: InputDecoration(
-                            hintText: 'Search for candidate',
-                            icon: Icon(Icons.search)),
-                      )
+                      //SearchBar here
+                      TheSearchBar()
                     ],
                   ),
                 ),

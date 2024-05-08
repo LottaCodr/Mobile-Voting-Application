@@ -16,6 +16,7 @@ class ApiClient extends GetConnect implements GetxService {
   Future<Response> getData(String uri) async {
     try {
       Response response = await get(uri);
+      print(response.body);
       return response;
     } catch (e) {
       print('Error from the api client is' + e.toString());
