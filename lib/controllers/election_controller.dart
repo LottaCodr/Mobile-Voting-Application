@@ -22,8 +22,8 @@ class ElectionController extends GetxController {
 
       _electionModel = data.map((e) => ElectionModel.fromJson(e)).toList();
     } else {
-      Get.snackbar(
-          'Error Loading data!', 'Server responded: ${response.statusCode}');
+      // Get.snackbar(
+      //     'Error Loading data!', 'Server responded: ${response.statusCode}');
       print(
           "This is the statuscode because the request was unsuccessful: ${response.statusCode}");
     }

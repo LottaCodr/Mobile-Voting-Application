@@ -4,7 +4,9 @@ class AppConstants {
 
   //APP URL CONSTANTS
 
-  static const String BASE_URL = 'https://www.googleapis.com';
+  static const String BASE_URL = 'https://www.googleapis.com/civicinfo/v2';
 
-  static const String ELECTION_ENDPOINT = '/civicinfo/v2/elections';
+  static const String ELECTION_ENDPOINT = '/elections';
+
+  static const String APIKEY = 'AIzaSyCubbANAuwA6ba-13YUQXss-HH3nEmpHRY';
 }

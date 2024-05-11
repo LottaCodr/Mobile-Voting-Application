@@ -73,14 +73,13 @@ class _VoteScreenState extends State<VoteScreen> {
                     itemBuilder: (context, int index) {
                       return GestureDetector(
                         onTap: () {
-                          String name = myCandidates[index].name;
+                          Candidate name = myCandidates[index];
                           Get.to(CandidateScreen(
-                            name: name,
+                            candidate: name,
                           ));
                         },
                         child: ElectionCard(
-                          candidateName: myCandidates[index].name,
-                          imageUrl: myCandidates[index].imageUrl,
+                          candidate: myCandidates[index],
                         ),
                       );
                     },

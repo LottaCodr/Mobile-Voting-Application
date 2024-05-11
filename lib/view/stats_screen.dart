@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_voting_application/components/bar_chart.dart';
 import 'package:mobile_voting_application/components/election_card.dart';
 import 'package:mobile_voting_application/components/selection_card.dart';
 import 'package:mobile_voting_application/models/candidate_model.dart';
@@ -26,7 +27,7 @@ class _StatsScreenState extends State<StatsScreen> {
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(25),
+          padding: const EdgeInsets.all(12),
           child: Column(
             children: [
               Row(
@@ -53,6 +54,7 @@ class _StatsScreenState extends State<StatsScreen> {
                 decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(10),
                     color: MVAColors.backgroundColor),
+                child: const BarChart(),
               ),
               const SizedBox(
                 height: 40,
@@ -74,7 +76,7 @@ class _StatsScreenState extends State<StatsScreen> {
                 ],
               ),
               SizedBox(
-                height: 190,
+                height: 400,
                 width: MediaQuery.of(context).size.width,
                 child: ListView.builder(
                     padding: const EdgeInsets.all(8),
@@ -82,18 +84,7 @@ class _StatsScreenState extends State<StatsScreen> {
                     scrollDirection: Axis.vertical,
                     itemCount: myCandidates.length,
                     itemBuilder: (context, index) {
-                      return Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ElectionCard(
-                              candidateName: myCandidates[index].name,
-                              imageUrl: myCandidates[index].imageUrl),
-                          const SizedBox(
-                            height: 7,
-                          )
-                        ],
-                      );
+                      return ElectionCard(candidate: myCandidates[index]);
                     }),
               )
             ],

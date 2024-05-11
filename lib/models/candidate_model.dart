@@ -6,12 +6,14 @@ class Candidate {
   final String partyId;
   final String manifesto;
   final String imageUrl;
+  final int votes;
 
   Candidate(
       {required this.imageUrl,
       required this.id,
       required this.name,
       required this.partyId,
+      required this.votes,
       required this.manifesto});
 
   // factory Candidate.fromFirestore(DocumentSnapshot doc) {
@@ -30,40 +32,54 @@ final Candidate firstCadidate = Candidate(
     id: 1,
     name: 'Mr. Barka',
     partyId: 'partyId',
-    manifesto: 'manifesto');
+    votes: 263,
+    manifesto:
+        'Invest in early childhood education programs. Increase access to high-speed internet in rural areas. Provide funding for teacher training and development in technology integration. Equip schools with modern laptops and tablets for students. Offer scholarships and grants for students pursuing STEM careers.');
 
 final Candidate secondCadidate = Candidate(
     imageUrl: 'assets/imageUrl/worthy.jpeg',
     id: 2,
-    name: 'Worthy',
+    name: 'Worthy Chukwuemeka',
     partyId: 'partyId',
-    manifesto: 'manifesto');
+    votes: 785,
+    manifesto:
+        'Improve public transportation infrastructure (buses, trains).Invest in renewable energy sources (solar, wind). Implement stricter regulations on pollution control. Increase funding for park maintenance and green spaces. Develop sustainable waste management strategies.');
 
 final Candidate thirdCadidate = Candidate(
     imageUrl: 'assets/imageUrl/Godwin.jpeg',
     id: 3,
-    name: 'Jiggy',
+    name: 'Jiggy Dan',
     partyId: 'partyId',
-    manifesto: 'manifesto');
+    votes: 390,
+    manifesto:
+        'Expand access to affordable healthcare for all citizens. Reduce wait times for surgeries and specialist appointments. Increase funding for mental health services. Support programs for single mothers and childcare assistance. Invest in initiatives for senior citizen care and support.');
 
 final Candidate fourthCadidate = Candidate(
     imageUrl: 'assets/imageUrl/prince.jpeg',
     id: 4,
-    name: 'Prince',
+    name: 'Prince Prince',
+    votes: 979,
     partyId: 'partyId',
-    manifesto: 'manifesto');
+    manifesto:
+        'Attract new businesses and industries to the region. Offer tax breaks and incentives for small business development. Invest in job training programs for in-demand skills. Support entrepreneurship and innovation initiatives. Reduce regulations and red tape hindering businesses.');
+
 final Candidate fifthCadidate = Candidate(
     imageUrl: 'assets/imageUrl/chris.jpeg',
     id: 5,
-    name: 'Chris',
+    name: 'Chris Rocky',
     partyId: 'partyId',
-    manifesto: 'manifesto');
+    votes: 875,
+    manifesto:
+        'Increase police presence in high-crime neighborhoods. Invest in community policing programs. Implement stricter penalties for violent crimes. Address the root causes of crime through social programs. Focus on rehabilitation and reintegration of offenders.');
+
 final Candidate sixthCadidate = Candidate(
     imageUrl: 'assets/imageUrl/dan.jpeg',
     id: 6,
-    name: 'Dan',
+    name: 'Danjuma Joseph',
     partyId: 'partyId',
-    manifesto: 'manifesto');
+    votes: 775,
+    manifesto:
+        'Increase availability of affordable housing units. Invest in programs to revitalize and improve disadvantaged communities. Improve public transportation infrastructure within cities. Promote mixed-use development projects to create vibrant neighborhoods. Foster a sense of community and belonging through public events and initiatives.');
 
 List<Candidate> myCandidates = [
   firstCadidate,
