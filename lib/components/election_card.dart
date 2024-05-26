@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:mobile_voting_application/models/candidate_model.dart';
+import 'package:mobile_voting_application/view/candidate_screen.dart';
 
+import '../controllers/candidate_controller.dart';
 import '../utilities/colors.dart';
 
 class ElectionCard extends StatelessWidget {
@@ -14,16 +17,34 @@ class ElectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     String votersCount() {
-      int voters = 0;
+      int voters = candidate.votes;
       if (voters < 1000) {
-        return '${candidate.votes}';
+        return '$voters';
       } else {
-        return '${candidate.votes} k';
+        return '${(voters / 1000).toStringAsFixed(1)} k';
       }
     }
 
+    void onPressedMandate() {
+      Get.to(() => CandidateScreen(candidate: candidate));
+      print('Reading mandate');
+    }
+
+    // void onPressedVote(CandidateController controller) {
+    //   if (controller.isVoted.value) {
+    //     controller.cancelVote();
+    //   } else {
+    //     controller.makeVote();
+    //   }
+    //   Get.snackbar('Successfully Vote', 'You have voted for ${candidate.name}',
+    //       colorText: Colors.white, backgroundColor: Colors.green);
+    // }
+
+    final CandidateController controller =
+        Get.put(CandidateController(candidate));
+
     return Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         padding: const EdgeInsets.all(12),
         width: MediaQuery.of(context).size.width,
         height: 170,
@@ -76,48 +97,74 @@ class ElectionCard extends StatelessWidget {
                         child: Text(
                           candidate.name,
                           style: const TextStyle(
+                              overflow: TextOverflow.ellipsis,
                               color: MVAColors.textColor,
                               fontWeight: FontWeight.bold,
                               fontSize: 20),
                         ),
                       ),
-                      Row(
-                        children: [
-                          Text(
-                            '${candidate.votes.toString()}k',
-                            style: const TextStyle(
-                                color: MVAColors.textColor,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14),
-                          ),
-                          const Text(
-                            ' People Voted',
-                            style: TextStyle(
-                                color: MVAColors.textColor, fontSize: 16),
-                          ),
-                        ],
-                      ),
+                      Obx(() => Row(
+                            children: [
+                              Text(
+                                controller.votersCount(),
+                                style: const TextStyle(
+                                    color: MVAColors.primaryColor,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14),
+                              ),
+                              const Text(
+                                ' People Voted',
+                                style: TextStyle(
+                                    color: MVAColors.textColor, fontSize: 16),
+                              ),
+                            ],
+                          )),
                     ],
                   ),
                 ),
               ],
             ),
             Expanded(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  ElectionButton(
-                    candidateName: candidate.name,
-                    buttonName: 'Mandate',
-                  ),
-                  const SizedBox(
-                    width: 6,
-                  ),
-                  ElectionButton(
-                    candidateName: candidate.name,
-                    buttonName: 'Vote',
-                  ),
-                ],
+              child: GetBuilder<CandidateController>(
+                init: CandidateController(candidate),
+                tag: candidate.id.toString(),
+                builder: (controller) => Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    ElectionButton(
+                      candidateName: candidate.name,
+                      buttonName: 'Mandate',
+                      onPressed: () => onPressedMandate(),
+                      icon: Icons.gavel,
+                      bgColor: Colors.white,
+                      borderColor: MVAColors.primaryColor,
+                      textColor: MVAColors.primaryColor,
+                      iconColor: MVAColors.primaryColor,
+                    ),
+                    const SizedBox(
+                      width: 6,
+                    ),
+                    ElectionButton(
+                      candidateName: candidate.name,
+                      buttonName:
+                          controller.isVoted.value ? 'Voted' : 'Vote Now',
+                      onPressed: () {
+                        if (controller.isVoted.value) {
+                          controller.cancelVote();
+                        } else {
+                          controller.makeVote();
+                        }
+                      },
+                      icon: controller.isVoted.value
+                          ? Icons.check
+                          : Icons.how_to_vote,
+                      bgColor: MVAColors.primaryColor,
+                      borderColor: Colors.transparent,
+                      textColor: Colors.white,
+                      iconColor: Colors.white,
+                    ),
+                  ],
+                ),
               ),
             )
           ],
@@ -130,37 +177,54 @@ class ElectionButton extends StatelessWidget {
     super.key,
     required this.candidateName,
     required this.buttonName,
+    required this.onPressed,
+    required this.icon,
+    required this.bgColor,
+    required this.borderColor,
+    required this.textColor,
+    required this.iconColor,
   });
 
   final String candidateName;
   final String buttonName;
+  final IconData icon;
+  final VoidCallback onPressed;
+  final Color bgColor;
+  final Color borderColor;
+  final Color textColor;
+  final Color iconColor;
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton(
-      onPressed: () {
-        // Implement voting logic here (e.g., navigate to voting screen)
-        print('Voted for $candidateName ');
-      },
-      style: ElevatedButton.styleFrom(
-        backgroundColor: MVAColors.primaryColor, // Adjust button color
-        textStyle: const TextStyle(color: Colors.white),
-      ),
-      child: Row(
-        children: [
-          Text(
-            buttonName,
-            style: const TextStyle(
-                color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-          ),
-          const SizedBox(
-            width: 5,
-          ),
-          const Icon(
-            Icons.how_to_vote_outlined,
-            color: Colors.white,
-          )
-        ],
+    return FittedBox(
+      child: ElevatedButton(
+        onPressed: () => onPressed(),
+        style: ElevatedButton.styleFrom(
+          elevation: 1.7,
+          backgroundColor: bgColor,
+          side: BorderSide(color: borderColor),
+          textStyle: const TextStyle(color: Colors.white),
+        ),
+        child: Row(
+          children: [
+            FittedBox(
+              child: Text(
+                buttonName,
+                style: TextStyle(
+                    color: textColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16),
+              ),
+            ),
+            const SizedBox(
+              width: 5,
+            ),
+            Icon(
+              icon,
+              color: iconColor,
+            )
+          ],
+        ),
       ),
     );
   }

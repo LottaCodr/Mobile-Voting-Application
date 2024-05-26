@@ -22,9 +22,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Get.find<ElectionController>().electionDetails();
+    // Get.find<ElectionController>().electionDetails();
 
-    print(Get.find<ElectionController>().electionDetails());
+    // print(Get.find<ElectionController>().electionDetails());
 
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,

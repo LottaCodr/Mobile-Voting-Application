@@ -60,7 +60,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
               icon: Icon(
                 Icons.how_to_vote_outlined,
               ),
-              label: 'Votes'),
+              label: 'Vote'),
           const NavigationDestination(
               selectedIcon:
                   Icon(Icons.show_chart_outlined, color: Colors.white),

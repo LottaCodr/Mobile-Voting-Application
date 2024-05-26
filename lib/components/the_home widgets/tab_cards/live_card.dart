@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 
-import '../utilities/colors.dart';
+import '../../../utilities/colors.dart';
 
 class VoteCountingCard extends StatelessWidget {
   final int index;
@@ -85,6 +84,10 @@ class VoteCountingCard extends StatelessWidget {
                                   BorderRadiusDirectional.circular(50)),
                           width: 40,
                           height: 40,
+                          child: const Icon(
+                            Icons.play_arrow,
+                            color: Colors.red,
+                          ),
                         ),
                         const SizedBox(
                           width: 10,

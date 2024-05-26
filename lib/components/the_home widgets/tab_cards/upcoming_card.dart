@@ -16,6 +16,12 @@ class UpcomingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
+Future<void> Calendar() async {
+  
+}
+
+
     Matrix4 matrix = Matrix4.identity();
 
     if (index == currentPageValue.floor()) {
@@ -66,62 +72,80 @@ class UpcomingCard extends StatelessWidget {
                       offset: Offset(5, 5),
                       blurRadius: 4),
                 ]),
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  //ADDING THE WIDGETS FOR ELECTION TYPE HERE
-                  const Text(
-                    'Upcoming Election:',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.normal),
-                  ),
-
-                  const Center(
-                    child: Text(
-                      'Students Representative Council Election',
-                      style: TextStyle(
-                          color: MVAColors.accentColor,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                //ADDING THE WIDGETS FOR ELECTION TYPE HERE
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadiusDirectional.circular(50)),
+                      width: 40,
+                      height: 40,
+                      child: const Icon(
+                        Icons.calendar_month,
+                        color: MVAColors.primaryColor,
+                      ),
                     ),
-                  ),
+                    SizedBox(
+                      width: 5,
+                    ),
+                    const Text(
+                      'Upcoming Election:',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.normal),
+                    ),
+                  ],
+                ),
+                const SizedBox(
+                  height: 25,
+                ),
 
-                  const SizedBox(
-                    height: 29,
-                  ),
-                  GestureDetector(
-                    onTap: () {},
-                    child: Container(
-                        decoration: BoxDecoration(
-                            color: MVAColors.accentColor,
-                            borderRadius:
-                                BorderRadiusDirectional.circular(100)),
-                        width: 200,
-                        height: 40,
-                        padding: const EdgeInsets.all(8),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            Icon(
-                              Icons.alarm_add_outlined,
-                              color: MVAColors.primaryColor,
-                            ),
-                            Text(
-                              'Set Reminder',
-                              style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: MVAColors.textColor),
-                            ),
-                          ],
-                        )),
-                  ),
-                ],
-              ),
+                const Text(
+                  'Students Representative Council Election',
+                  style: TextStyle(
+                      color: MVAColors.accentColor,
+                      fontSize: 25,
+                      height: 1,
+                      fontWeight: FontWeight.w600),
+                ),
+
+                const SizedBox(
+                  height: 50,
+                ),
+                GestureDetector(
+                  onTap: () {},
+                  child: Container(
+                      decoration: BoxDecoration(
+                          color: MVAColors.accentColor,
+                          borderRadius: BorderRadiusDirectional.circular(100)),
+                      width: 200,
+                      height: 40,
+                      padding: const EdgeInsets.all(8),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          Icon(
+                            Icons.alarm_add_outlined,
+                            color: MVAColors.primaryColor,
+                          ),
+                          Text(
+                            'Set Reminder',
+                            style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: MVAColors.textColor),
+                          ),
+                        ],
+                      )),
+                ),
+              ],
             ),
           ),
         ]),

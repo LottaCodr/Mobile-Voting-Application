@@ -84,6 +84,10 @@ class CompletedCard extends StatelessWidget {
                                   BorderRadiusDirectional.circular(50)),
                           width: 40,
                           height: 40,
+                          child: const Icon(
+                            Icons.check_circle,
+                            color: Colors.green,
+                          ),
                         ),
                         const SizedBox(
                           width: 10,

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_voting_application/components/the_home%20widgets/completed_tab.dart';
 import 'package:mobile_voting_application/components/the_home%20widgets/live_tab.dart';
 
-import 'package:mobile_voting_application/components/vote_counting_card.dart';
+import 'package:mobile_voting_application/components/the_home%20widgets/tab_cards/live_card.dart';
 import 'package:mobile_voting_application/models/election_model.dart';
 
 import 'package:mobile_voting_application/utilities/colors.dart';
@@ -39,11 +39,11 @@ class _HomeState extends State<Home> {
     //   }
     // }
 
-    tabBarViews.add(
-      LiveTab(),
-    );
-    tabBarViews.add(CompletedTab());
-    tabBarViews.add(UpcomingTab());
+    // tabBarViews.add(
+    //   LiveTab(),
+    // );
+    // tabBarViews.add(CompletedTab());
+    // tabBarViews.add(UpcomingTab());
 
     return DefaultTabController(
       length: 3,

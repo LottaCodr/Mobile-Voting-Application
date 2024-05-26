@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_voting_application/components/candidate_scorecard.dart';
-import 'package:mobile_voting_application/components/vote_counting_card.dart';
+import 'package:mobile_voting_application/components/the_home%20widgets/tab_cards/live_card.dart';
 
 class ProgressScreen extends StatefulWidget {
   const ProgressScreen({super.key});

@@ -5,64 +5,109 @@ class CustomSearchClass extends SearchDelegate {
 
   @override
   List<Widget> buildActions(BuildContext context) {
-    //add the action needed for the search later, and a clear button
-
-    //this will show clear query button
+    // Action to clear the search query
     return [
       IconButton(
-          onPressed: () {
-            query = '';
-          },
-          icon: const Icon(Icons.clear))
+        onPressed: () {
+          query = '';
+        },
+        icon: const Icon(Icons.clear),
+      ),
     ];
   }
 
   @override
   Widget buildLeading(BuildContext context) {
-    //add leading actions to be shown before the search
-
-    //adding a back button to close the search
-
+    // Back button to close the search
     return IconButton(
-        onPressed: () {
-          close(context, null);
-        },
-        icon: const Icon(Icons.arrow_back));
+      onPressed: () {
+        close(context, null);
+      },
+      icon: const Icon(Icons.arrow_back),
+    );
   }
 
   @override
   Widget buildResults(BuildContext context) {
-    //build the search results widget and its view
-
-    //clear the old search list
-
+    // Clear the old search list
     var filteredData =
         data.where((element) => element.startsWith(query)).toList();
 
-    //view a list view with the search result
-
+    // Display search results with a clear message if no results found
     return Container(
-      margin: EdgeInsets.all(20),
-      child: ListView(
-          padding: EdgeInsets.only(top: 8, bottom: 8),
-          scrollDirection: Axis.vertical,
-          children: List.generate(data.length, (index) {
-            var item = filteredData[index];
-            return Card(
-              color: Colors.white,
-              child: Container(
-                padding: EdgeInsets.all(16),
-                child: Text(item),
+      margin: const EdgeInsets.all(20),
+      child: filteredData.isNotEmpty
+          ? ListView.builder(
+              padding: const EdgeInsets.only(top: 8, bottom: 8),
+              scrollDirection: Axis.vertical,
+              itemCount: filteredData.length,
+              itemBuilder: (context, index) {
+                var item = filteredData[index];
+                return Card(
+                  color: Colors.white,
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(item),
+                  ),
+                );
+              },
+            )
+          : Center(
+              child: Text(
+                'No results found for "$query"',
+                style: TextStyle(color: Colors.grey),
               ),
-            );
-          })),
+            ),
     );
   }
 
   @override
   Widget buildSuggestions(BuildContext context) {
-    //show suggestions before search
+    // Show suggestions before search (optional, you can remove this)
+    var filteredData =
+        data.where((element) => element.startsWith(query)).toList();
 
-    return Container();
+    // Display search results with a clear message if no results found
+    return Container(
+      margin: const EdgeInsets.all(20),
+      child: filteredData.isNotEmpty
+          ? ListView.builder(
+              padding: const EdgeInsets.only(top: 8, bottom: 8),
+              scrollDirection: Axis.vertical,
+              itemCount: filteredData.length,
+              itemBuilder: (context, index) {
+                var item = filteredData[index];
+                return Card(
+                  color: Colors.white,
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(item),
+                  ),
+                );
+              },
+            )
+          : Center(
+              child: Text(
+                'No results found for "$query"',
+                style: const TextStyle(color: Colors.grey),
+              ),
+            ),
+    );
+  }
+
+  @override
+  ThemeData appBarTheme(BuildContext context) {
+    // Customize the search bar appearance
+    final themeData = super.appBarTheme(context);
+    return themeData.copyWith(
+      hintColor: Colors.grey,
+      textTheme: themeData.textTheme.copyWith(
+        titleLarge: TextStyle(
+          color: Colors.black,
+          fontSize: 16.0,
+          fontWeight: FontWeight.normal,
+        ),
+      ),
+    );
   }
 }

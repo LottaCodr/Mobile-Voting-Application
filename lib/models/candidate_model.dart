@@ -6,14 +6,16 @@ class Candidate {
   final String partyId;
   final String manifesto;
   final String imageUrl;
-  final int votes;
+  int votes;
+  bool isVoted;
 
   Candidate(
       {required this.imageUrl,
       required this.id,
       required this.name,
       required this.partyId,
-      required this.votes,
+       this.votes = 0,
+       this.isVoted = false,
       required this.manifesto});
 
   // factory Candidate.fromFirestore(DocumentSnapshot doc) {

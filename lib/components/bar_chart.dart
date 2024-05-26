@@ -4,14 +4,16 @@ import 'package:mobile_voting_application/utilities/colors.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 
 class BarChart extends StatelessWidget {
-  const BarChart({super.key});
+  const BarChart({super.key, required this.electionType});
+
+  final String electionType;
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
       child: SfCartesianChart(
         primaryXAxis: CategoryAxis(),
-        title: ChartTitle(text: 'Election yearly analysis'),
+        title: ChartTitle(text: '$electionType Election analysis'),
         // Enable legend
         // legend: const Legend(isVisible: true),
         series: <LineSeries<ElectionData, String>>[
@@ -28,7 +30,9 @@ class BarChart extends StatelessWidget {
                 ElectionData(5, 'Barka'),
                 ElectionData(12, 'Yarka'),
               ],
-              dataLabelSettings: const DataLabelSettings(isVisible: true),
+              dataLabelSettings: const DataLabelSettings(
+                isVisible: true,
+              ),
               xValueMapper: (ElectionData candidate, _) => candidate.candidate,
               yValueMapper: (ElectionData candidate, _) => candidate.votes),
         ],

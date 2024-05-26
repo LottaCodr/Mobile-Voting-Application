@@ -12,5 +12,5 @@ Future<void> init() async {
   Get.lazyPut(() => ElectonRepo(apiClient: Get.find()));
 
   //controllers
-  Get.lazyPut(() => ElectionController(electonRepo: Get.find()));
+  //Get.lazyPut(() => ElectionController(electonRepo: Get.find()));
 }

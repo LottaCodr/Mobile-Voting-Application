@@ -1,58 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:mobile_voting_application/components/button.dart';
 import 'package:mobile_voting_application/controllers/candidate_controller.dart';
 import 'package:mobile_voting_application/models/candidate_model.dart';
 import 'package:mobile_voting_application/utilities/colors.dart';
 
-class CandidateScreen extends StatefulWidget {
+class CandidateScreen extends StatelessWidget {
   final Candidate candidate;
   const CandidateScreen({super.key, required this.candidate});
 
   @override
-  State<CandidateScreen> createState() => _CandidateScreenState();
-}
-
-class _CandidateScreenState extends State<CandidateScreen> {
-  bool vote = false;
-
-  void _makeVote() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    setState(() {
-      vote = true;
-    });
-    print('You have voted for ${widget.candidate.name}');
-
-    Get.snackbar('Vote Counted',
-        'Vote submitted successfully for  ${widget.candidate.name}',
-        backgroundColor: Colors.green, colorText: Colors.white);
-  }
-
-  void _cancelVote() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    setState(() {
-      vote = false;
-    });
-
-    print('You have voted for ${widget.candidate.name}');
-
-    Get.snackbar('Cancelled Vote', 'Cancelled for ${widget.candidate.name} ',
-        backgroundColor: MVAColors.accentColor, colorText: MVAColors.textColor);
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final CandidateController controller =
-        Get.put(CandidateController(widget.candidate)); //Injecting controller
+    String votersCount() {
+      int voters = candidate.votes;
+      if (voters < 1000) {
+        return '$voters';
+      } else {
+        return '${(voters / 1000).toStringAsFixed(1)} k';
+      }
+    }
 
     return GetBuilder<CandidateController>(
-      init: controller,
+      init: CandidateController(candidate),
+      tag: candidate.id.toString(),
       builder: (controller) => Scaffold(
         appBar: AppBar(
           centerTitle: true,
           backgroundColor: MVAColors.primaryColor,
           title: Text(
-            widget.candidate.name,
+            candidate.name,
             style: const TextStyle(fontSize: 24, color: Colors.white),
           ),
         ),
@@ -105,7 +80,7 @@ class _CandidateScreenState extends State<CandidateScreen> {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(20),
                       child: Image.asset(
-                        widget.candidate.imageUrl,
+                        candidate.imageUrl,
                         fit: BoxFit.cover,
                       ),
                     ),
@@ -121,11 +96,13 @@ class _CandidateScreenState extends State<CandidateScreen> {
                       ),
                       Row(
                         children: [
-                          Text(
-                            '${widget.candidate.votes.toString()}K',
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: MVAColors.primaryColor),
+                          Obx(
+                            () => Text(
+                              controller.votersCount(),
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: MVAColors.primaryColor),
+                            ),
                           ),
                           const SizedBox(
                             width: 5,
@@ -138,7 +115,7 @@ class _CandidateScreenState extends State<CandidateScreen> {
                   const SizedBox(
                     height: 15,
                   ),
-                  Text(widget.candidate.manifesto)
+                  Text(candidate.manifesto)
                 ],
               ),
             ),

@@ -5,7 +5,7 @@ import 'package:mobile_voting_application/components/the_home%20widgets/tab_card
 import '../../utilities/colors.dart';
 import '../../view/authenticate/sign_in.dart';
 import '../candidate_scorecard.dart';
-import '../vote_counting_card.dart';
+import 'tab_cards/live_card.dart';
 import 'tab_cards/upcoming_card.dart';
 
 class UpcomingTab extends StatefulWidget {

@@ -24,29 +24,43 @@ class _StatsScreenState extends State<StatsScreen> {
       appBar: AppBar(
         title: const Text("Vote Statistics"),
         centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  SelectionCard(
-                    header: 'Pick Election',
-                    selected: selectedElection,
-                    electionSelected: pickELection,
-                  ),
-                  SelectionCard(
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(70.0),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              //mainAxisSize: MainAxisSize.max,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                SelectionCard(
+                  header: 'Pick Election',
+                  selected: selectedElection,
+                  electionSelected: pickELection,
+                  textColor: MVAColors.primaryColor,
+                  bgColor: MVAColors.primaryColor.withOpacity(0.2),
+                  textSize: 12,
+                  dropDownWidth: 150,
+                ),
+                SelectionCard(
                     header: 'Region',
                     selected: selectedRegion,
                     electionSelected: pickRegion,
-                  ),
-                ],
-              ),
+                    textColor: MVAColors.primaryColor,
+                    bgColor: MVAColors.primaryColor.withOpacity(0.2),
+                    textSize: 12,
+                    dropDownWidth: 150),
+              ],
+            ),
+          ),
+        ),
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Column(
+            children: [
               const SizedBox(
-                height: 30,
+                height: 10,
               ),
               Container(
                 width: MediaQuery.of(context).size.width,
@@ -54,7 +68,9 @@ class _StatsScreenState extends State<StatsScreen> {
                 decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(10),
                     color: MVAColors.backgroundColor),
-                child: const BarChart(),
+                child: BarChart(
+                  electionType: selectedElection,
+                ),
               ),
               const SizedBox(
                 height: 40,
@@ -75,11 +91,11 @@ class _StatsScreenState extends State<StatsScreen> {
                   ),
                 ],
               ),
-              SizedBox(
+              Container(
+                padding: const EdgeInsets.only(bottom: 25),
                 height: 400,
                 width: MediaQuery.of(context).size.width,
                 child: ListView.builder(
-                    padding: const EdgeInsets.all(8),
                     physics: const ScrollPhysics(),
                     scrollDirection: Axis.vertical,
                     itemCount: myCandidates.length,

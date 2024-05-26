@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:get/get_connect/http/src/utils/utils.dart';
 import 'package:mobile_voting_application/components/customSearchClass.dart';
 
 class TheSearchBar extends StatefulWidget {
@@ -19,23 +18,15 @@ class _TheSearchBarState extends State<TheSearchBar> {
     });
   }
 
- 
-
   @override
   Widget build(BuildContext context) {
     return Container(
-        padding: const EdgeInsets.all(6),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text('Search'),
-            IconButton(
-                onPressed: () {
-                  showSearch(context: context, delegate: CustomSearchClass());
-                },
-                icon: const Icon(Icons.search))
-          ],
-        ));
+        padding: const EdgeInsets.all(10),
+        child: IconButton(
+            onPressed: () {
+              showSearch(context: context, delegate: CustomSearchClass());
+            },
+            icon: const Icon(Icons.search)));
   }
 }
 

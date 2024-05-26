@@ -4,9 +4,9 @@ class AppConstants {
 
   //APP URL CONSTANTS
 
-  static const String BASE_URL = 'https://www.googleapis.com/civicinfo/v2';
+  static const String BASE_URL = 'https://openelections.org/api/v1/candidates';
 
-  static const String ELECTION_ENDPOINT = '/elections';
+  static const String ELECTION_ENDPOINT = '?state=CA&office=US+House';
 
   static const String APIKEY = 'AIzaSyCubbANAuwA6ba-13YUQXss-HH3nEmpHRY';
 }

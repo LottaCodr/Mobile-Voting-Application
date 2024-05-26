@@ -7,11 +7,20 @@ class SelectionCard extends StatefulWidget {
   final String header;
   final List<String> electionSelected;
   late String selected;
+  final Color textColor;
+  final Color bgColor;
+  final double textSize;
+  final double dropDownWidth;
+
   SelectionCard(
       {super.key,
       required this.header,
       required this.electionSelected,
-      required this.selected});
+      required this.selected,
+      required this.textColor,
+      required this.bgColor,
+      required this.textSize,
+      required this.dropDownWidth});
 
   @override
   State<SelectionCard> createState() => _SelectionCardState();
@@ -27,16 +36,15 @@ class _SelectionCardState extends State<SelectionCard> {
         Text(widget.header),
         Container(
           decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              color: MVAColors.primaryColor),
-          width: 150,
+              borderRadius: BorderRadius.circular(8), color: widget.bgColor),
+          width: widget.dropDownWidth,
           height: 50,
           child: DropdownButton(
-              iconEnabledColor: Colors.white,
+              iconEnabledColor: widget.textColor,
               borderRadius: BorderRadius.circular(5),
-              underline: Container(),
+              // underline: Container(),
               padding: EdgeInsets.only(left: 20),
-              dropdownColor: MVAColors.primaryColor,
+              dropdownColor: MVAColors.accentColor,
               itemHeight: 50,
               value: widget.selected,
               items: widget.electionSelected.map((value) {
@@ -45,9 +53,9 @@ class _SelectionCardState extends State<SelectionCard> {
                     value: value,
                     child: Center(
                       child: Text(value,
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
+                          style: TextStyle(
+                              color: widget.textColor,
+                              fontSize: widget.textSize,
                               fontWeight: FontWeight.bold)),
                     ));
               }).toList(),

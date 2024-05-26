@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import '../../utilities/colors.dart';
 import '../../view/authenticate/sign_in.dart';
 import '../candidate_scorecard.dart';
-import '../vote_counting_card.dart';
+import 'tab_cards/live_card.dart';
 
 class LiveTab extends StatefulWidget {
   const LiveTab({super.key});
