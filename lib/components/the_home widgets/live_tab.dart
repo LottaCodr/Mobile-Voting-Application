@@ -1,5 +1,6 @@
 import 'package:dots_indicator/dots_indicator.dart';
 import 'package:flutter/material.dart';
+import 'package:mobile_voting_application/models/election_model.dart';
 
 import '../../utilities/colors.dart';
 import '../../view/authenticate/sign_in.dart';
@@ -30,7 +31,7 @@ class _LiveTabState extends State<LiveTab> {
     });
   }
 
-   @override
+  @override
   void dispose() {
     super.dispose();
     pageController.dispose();
@@ -47,10 +48,11 @@ class _LiveTabState extends State<LiveTab> {
             height: 320,
             child: PageView.builder(
                 controller: pageController,
-                itemCount: 5,
+                itemCount: liveElection.length,
                 itemBuilder: (context, position) {
                   return VoteCountingCard(
                     index: position,
+                    live: liveElection[position],
                     currentPageValue: _currentPageValue,
                     scaleFactor: _scaleFactor,
                     height: _height,
@@ -59,7 +61,7 @@ class _LiveTabState extends State<LiveTab> {
           ),
 
           DotsIndicator(
-            dotsCount: 5,
+            dotsCount: liveElection.length,
             position: _currentPageValue.toInt(),
             decorator: const DotsDecorator(
               color: Colors.grey, // Inactive color

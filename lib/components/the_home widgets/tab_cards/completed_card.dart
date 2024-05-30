@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_voting_application/models/election_model.dart';
 
 import '../../../utilities/colors.dart';
 
 class CompletedCard extends StatelessWidget {
   final int index;
+  final ElectionModel completed;
   final double currentPageValue;
   final double scaleFactor;
   final double height;
   const CompletedCard(
       {super.key,
       required this.index,
+      required this.completed,
       required this.currentPageValue,
       required this.scaleFactor,
       required this.height});
@@ -123,19 +126,19 @@ class CompletedCard extends StatelessWidget {
                   height: 15,
                 ),
                 //ADDING THE WIDGETS FOR VOTE COUNTING HERE
-                const Column(
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '33,000+ Votes',
-                      style: TextStyle(
+                      '${completed.totalVotes.toString()} Votes',
+                      style: const TextStyle(
                           color: MVAColors.accentColor,
                           fontSize: 32,
                           fontWeight: FontWeight.w900),
                     ),
                     Text(
-                      'Comp. Sci Presidential',
-                      style: TextStyle(
+                      completed.name.toString(),
+                      style: const TextStyle(
                           color: Colors.white,
                           fontSize: 18,
                           fontWeight: FontWeight.w600),

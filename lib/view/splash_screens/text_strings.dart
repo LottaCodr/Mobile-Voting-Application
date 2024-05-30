@@ -5,7 +5,7 @@ const String title_2 = 'Be Focused';
 const String title_3 = 'Be Formidable';
 
 // -- SubTitles - //
-const String subTitle_1 = 'Discover a Healthier Lifestyle Tailored Just for You';
+const String subTitle_1 = 'Democracy in your pocket. No more long lines, no more missed deadlines. Patriot, the secure and convenient mobile voting app, empowers you to shape your future – on your terms.';
 const String subTitle_2 = 'Enhance Mental Clarity and Concentration for Optimal Performance';
 const String subTitle_3 = 'Forge a Powerful Physique with Intense Workouts and Challenges';
 

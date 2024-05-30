@@ -1,31 +1,36 @@
-// import 'package:get/get.dart';
-// import 'package:mobile_voting_application/data/api/repo/election_repo.dart';
+import 'package:get/get.dart';
 
-// import '../models/election_model.dart';
+import 'package:mobile_voting_application/models/election_model.dart';
 
-// class ElectionController extends GetxController {
-//   final ElectonRepo electonRepo;
+class ElectionController extends GetxController {
+  //var votedCandidate = Rxn<Candidate>();
+ // final elections = <ElectionModel>[].obs;
+  final selectedCandidateId = <int, int>{}.obs;
+  // //method to vote for a candidate
+  // void voteForCandidate(Candidate candidate) {
+  //   votedCandidate.value = candidate;
+  // }
 
-//   ElectionController({required this.electonRepo});
+  void selectCandidate(int  electionId, int candidateId) {
+    if (selectedCandidateId[electionId] == candidateId) {
+      selectedCandidateId[electionId] = -1; //Deselect if already selected
+    } else {
+      selectedCandidateId[electionId] = candidateId;
+    }
+    update();
+  }
 
-//   List<ElectionModel> _electionModel = [];
-//   bool isLoading = false;
+  bool isCandidateSelected(int electionId, int candidateId) {
+    return selectedCandidateId[electionId] == candidateId;
+  }
 
-//   List<ElectionModel> get electionModel => _electionModel;
+  //Method to cancel vote for the current candidate
+  // void cancelVote() {
+  //   votedCandidate.value = null;
+  // }
 
-//   Future<void> electionDetails() async {
-//     Response response = await electonRepo.getElectionDetails();
-
-//     if (response.statusCode == 200) {
-//       print('Got the Election Details from Api');
-//       List<dynamic> data = response.body;
-
-//       _electionModel = data.map((e) => ElectionModel.fromJson(e)).toList();
-//     } else {
-//       // Get.snackbar(
-//       //     'Error Loading data!', 'Server responded: ${response.statusCode}');
-//       print(
-//           "This is the statuscode because the request was unsuccessful: ${response.statusCode}");
-//     }
-//   }
-// }
+  //Method to check if a candidate is the currently voted candidate
+  // bool isVOtedCandidate(Candidate candidate) {
+  //   return votedCandidate.value == candidate;
+  // }
+}

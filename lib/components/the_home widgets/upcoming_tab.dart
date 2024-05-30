@@ -1,11 +1,10 @@
 import 'package:dots_indicator/dots_indicator.dart';
 import 'package:flutter/material.dart';
-import 'package:mobile_voting_application/components/the_home%20widgets/tab_cards/completed_card.dart';
+import 'package:mobile_voting_application/models/election_model.dart';
 
 import '../../utilities/colors.dart';
 import '../../view/authenticate/sign_in.dart';
 import '../candidate_scorecard.dart';
-import 'tab_cards/live_card.dart';
 import 'tab_cards/upcoming_card.dart';
 
 class UpcomingTab extends StatefulWidget {
@@ -21,6 +20,8 @@ class _UpcomingTabState extends State<UpcomingTab> {
   final double _scaleFactor = 0.85;
   final double _height = 300;
   //bool onchange = false;
+
+  //final ElectionModel election = [];
 
   @override
   void initState() {
@@ -49,9 +50,10 @@ class _UpcomingTabState extends State<UpcomingTab> {
             height: 320,
             child: PageView.builder(
                 controller: pageController,
-                itemCount: 5,
+                itemCount: upComingElection.length,
                 itemBuilder: (context, position) {
                   return UpcomingCard(
+                    upcomingElectionDetails: upComingElection[position],
                     index: position,
                     currentPageValue: _currentPageValue,
                     scaleFactor: _scaleFactor,
@@ -61,7 +63,7 @@ class _UpcomingTabState extends State<UpcomingTab> {
           ),
 
           DotsIndicator(
-            dotsCount: 5,
+            dotsCount: upComingElection.length,
             position: _currentPageValue.toInt(),
             decorator: const DotsDecorator(
               color: Colors.grey, // Inactive color

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:mobile_voting_application/controllers/election_controller.dart';
 import 'package:mobile_voting_application/models/candidate_model.dart';
 import 'package:mobile_voting_application/view/candidate_screen.dart';
 
@@ -42,6 +43,8 @@ class ElectionCard extends StatelessWidget {
 
     final CandidateController controller =
         Get.put(CandidateController(candidate));
+    final ElectionController electionController =
+        Get.find<ElectionController>();
 
     return Container(
         margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
@@ -89,38 +92,43 @@ class ElectionCard extends StatelessWidget {
                   width: 10,
                 ),
                 Center(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      FittedBox(
-                        child: Text(
-                          candidate.name,
-                          style: const TextStyle(
-                              overflow: TextOverflow.ellipsis,
-                              color: MVAColors.textColor,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 20),
-                        ),
-                      ),
-                      Obx(() => Row(
-                            children: [
-                              Text(
-                                controller.votersCount(),
+                  child: GetBuilder<CandidateController>(
+                      tag: candidate.id.toString(),
+                      init: CandidateController(candidate),
+                      builder: (controller) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            FittedBox(
+                              child: Text(
+                                candidate.name,
                                 style: const TextStyle(
-                                    color: MVAColors.primaryColor,
+                                    overflow: TextOverflow.ellipsis,
+                                    color: MVAColors.textColor,
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 14),
+                                    fontSize: 20),
                               ),
-                              const Text(
-                                ' People Voted',
-                                style: TextStyle(
-                                    color: MVAColors.textColor, fontSize: 16),
-                              ),
-                            ],
-                          )),
-                    ],
-                  ),
+                            ),
+                            Row(
+                              children: [
+                                Text(
+                                  controller.votersCount(),
+                                  style: const TextStyle(
+                                      color: MVAColors.primaryColor,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14),
+                                ),
+                                const Text(
+                                  ' People Voted',
+                                  style: TextStyle(
+                                      color: MVAColors.textColor, fontSize: 16),
+                                ),
+                              ],
+                            )
+                          ],
+                        );
+                      }),
                 ),
               ],
             ),
@@ -151,6 +159,7 @@ class ElectionCard extends StatelessWidget {
                       onPressed: () {
                         if (controller.isVoted.value) {
                           controller.cancelVote();
+                          //electionController.selectCandidate(-1);
                         } else {
                           controller.makeVote();
                         }

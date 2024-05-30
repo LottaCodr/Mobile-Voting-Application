@@ -20,6 +20,9 @@ class FirstSplashScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Image.asset('assets/imageUrl/vote1.png'),
+             const SizedBox(
+                height: 30,
+              ),
               const Text(
                 'Cast Your Vote',
                 textAlign: TextAlign.center,
@@ -33,7 +36,7 @@ class FirstSplashScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(
-                height: 50,
+                height: 30,
               ),
               Button(
                   text: "Create an Account",

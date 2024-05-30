@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:dots_indicator/dots_indicator.dart';
 import 'package:mobile_voting_application/components/the_home%20widgets/tab_cards/completed_card.dart';
+import 'package:mobile_voting_application/models/election_model.dart';
 
 import '../../utilities/colors.dart';
 import '../../view/authenticate/sign_in.dart';
@@ -48,10 +49,11 @@ class _CompletedTabState extends State<CompletedTab> {
             height: 320,
             child: PageView.builder(
                 controller: pageController,
-                itemCount: 5,
+                itemCount: completedElection.length,
                 itemBuilder: (context, position) {
                   return CompletedCard(
                     index: position,
+                    completed: completedElection[position],
                     currentPageValue: _currentPageValue,
                     scaleFactor: _scaleFactor,
                     height: _height,
@@ -60,7 +62,7 @@ class _CompletedTabState extends State<CompletedTab> {
           ),
 
           DotsIndicator(
-            dotsCount: 5,
+            dotsCount: completedElection.length,
             position: _currentPageValue.toInt(),
             decorator: const DotsDecorator(
               color: Colors.grey, // Inactive color

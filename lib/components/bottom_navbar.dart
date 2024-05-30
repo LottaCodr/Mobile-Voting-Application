@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_voting_application/view/candidate_screen.dart';
 import 'package:mobile_voting_application/view/stats_screen.dart';
 import 'package:mobile_voting_application/utilities/colors.dart';
 

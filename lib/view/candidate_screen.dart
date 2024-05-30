@@ -96,13 +96,11 @@ class CandidateScreen extends StatelessWidget {
                       ),
                       Row(
                         children: [
-                          Obx(
-                            () => Text(
-                              controller.votersCount(),
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: MVAColors.primaryColor),
-                            ),
+                          Text(
+                            controller.votersCount(),
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: MVAColors.primaryColor),
                           ),
                           const SizedBox(
                             width: 5,

@@ -13,8 +13,8 @@ class StatsScreen extends StatefulWidget {
 }
 
 class _StatsScreenState extends State<StatsScreen> {
-  List<String> pickELection = ['Presidential', 'State', "LG"];
-  List<String> pickRegion = ['National', 'State', "Locale"];
+  List<String> pickELection = ['Presidential', 'Governorship', "Senatorial"];
+  List<String> pickRegion = ['National', 'State'];
   String selectedElection = 'Presidential';
   String selectedRegion = 'National';
 

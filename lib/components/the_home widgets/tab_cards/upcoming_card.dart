@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../../models/election_model.dart';
 import '../../../utilities/colors.dart';
 
 class UpcomingCard extends StatelessWidget {
+  final ElectionModel upcomingElectionDetails;
   final int index;
   final double currentPageValue;
   final double scaleFactor;
@@ -10,17 +12,14 @@ class UpcomingCard extends StatelessWidget {
   const UpcomingCard(
       {super.key,
       required this.index,
+      required this.upcomingElectionDetails,
       required this.currentPageValue,
       required this.scaleFactor,
       required this.height});
 
   @override
   Widget build(BuildContext context) {
-
-Future<void> Calendar() async {
-  
-}
-
+    Future<void> Calendar() async {}
 
     Matrix4 matrix = Matrix4.identity();
 
@@ -91,7 +90,7 @@ Future<void> Calendar() async {
                         color: MVAColors.primaryColor,
                       ),
                     ),
-                    SizedBox(
+                    const SizedBox(
                       width: 5,
                     ),
                     const Text(
@@ -106,10 +105,10 @@ Future<void> Calendar() async {
                 const SizedBox(
                   height: 25,
                 ),
-
-                const Text(
-                  'Students Representative Council Election',
-                  style: TextStyle(
+//type of Election
+                Text(
+                  upcomingElectionDetails.name,
+                  style: const TextStyle(
                       color: MVAColors.accentColor,
                       fontSize: 25,
                       height: 1,

@@ -23,6 +23,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Get.find<ElectionController>().electionDetails();
+    Get.put(ElectionController());
 
     // print(Get.find<ElectionController>().electionDetails());
 
