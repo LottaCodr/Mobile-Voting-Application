@@ -1,5 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:mobile_voting_application/components/button.dart';
+import 'package:mobile_voting_application/services/auth.dart';
 import 'package:mobile_voting_application/view/authenticate/sign_in.dart';
 import 'package:mobile_voting_application/utilities/colors.dart';
 
@@ -14,127 +19,152 @@ class SignUpScreen extends StatefulWidget {
 
 class _SignUpScreenState extends State<SignUpScreen> {
   TextEditingController nameController = TextEditingController();
+  TextEditingController emailController = TextEditingController();
   TextEditingController voterIDController = TextEditingController();
   TextEditingController phoneController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
 
-//   //create user
-//   Future signUP() async {
-//     showDialog(
-//       context: context,
-//       builder: (context) => const Center(
-//         child: CircularProgressIndicator(),
-//       ),
-//     );
-//     try {
-//       UserCredential userCredential =
-//           await FirebaseAuth.instance.createUserWithEmailAndPassword(
-//         email: emailController.text.trim(),
-//         password: passwordController.text.trim(),
-//       );
+  //create user
+  Future signUP() async {
+    //Get user id
+    String userID = AuthService().currentUser.toString();
 
-//       //Get user id
-//       String userID = userCredential.user!.uid;
+    //collect user's name and phoneNumber
+    String name = nameController.text.trim();
+    String email = emailController.text.trim();
+    String phoneNumber = phoneController.text.trim();
+    //String voterId = voterIDController.text.trim();
+    String password = passwordController.text.trim();
 
-//       //collect user's name and phoneNumber
-//       String name = nameController.text.trim();
-//       String phoneNumber = phoneController.text.trim();
-//       String voterId = voterIDController.text.trim();
-//       String password = passwordController.text.trim();
+    showDialog(
+      context: context,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+    if (name.isEmpty || email.isEmpty || password.isEmpty) {
+      // Show error message: All fields are required
+      return;
+    }
+    try {
+      await AuthService()
+          .createUserWithEmailAndPassword(email: email, password: password);
+      await AuthService().addUserDetails(name, email, password);
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+            builder: (context) => SignIn()), // Replace with your home screen
+        (route) => false,
+      );
 
-//       //Create a reference to the users collection in firestore
-//       CollectionReference userRef =
-//           FirebaseFirestore.instance.collection("users");
+      //Create a reference to the users collection in firestore
+      CollectionReference userRef =
+          FirebaseFirestore.instance.collection("users");
 
-//       //Create a new document in the users collection with the userID
-//       await userRef.doc(userID).set({
-//         'name': name,
-//         'phoneNumber': phoneNumber,
-//         'email': email,
-//         'password': password
-//       });
+      //Create a new document in the users collection with the userID
+      await userRef.doc(userID).set({
+        'name': name,
+        'phoneNumber': phoneNumber,
+        'email': email,
+        'password': password
+      });
 
-//       //successful user creation
-//       redirectToSignInPage();
-//     } on FirebaseAuthException catch (e) {
-//       if (kDebugMode) {
-//         print(e);
-//       }
-// //display error message to user
-//       Get.snackbar('Error:', 'Failed to create account ${e.message}',
-//           backgroundColor: Colors.red);
-//     } finally {
-//       Navigator.pop(context);
-//     }
-//     navigatorKey.currentState!.popUntil((route) => route.isFirst);
-//   }
+      //successful user creation
+      redirectToSignInPage();
+    } on FirebaseAuthException catch (e) {
+      String message = 'Registration failed.';
+      if (e.code == 'email-already-in-use') {
+        message = 'The email address is already in use.';
+      } else {
+        print('Registration error: ${e.message}');
+      }
+      // Show user-friendly error message (e.g., snackbar or alert dialog)
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+        ),
+      );
+//display error message to user
+    } catch (e) {
+      print('Registration error: $e');
+      // Show generic error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('An error occurred during registration.'),
+        ),
+      );
+      Navigator.pop(context);
+    }
+    //navigatorKey.currentState!.popUntil((route) => route.isFirst);
+  }
 
-//   //form validation
-//   bool validateForm() {
-//     String name = nameController.text.trim();
-//     String email = emailController.text.trim();
-//     String password = passwordController.text.trim();
-//     String phoneNumber = phoneController.text.trim();
+  //form validation
+  bool validateForm() {
+    String name = nameController.text.trim();
+    String email = emailController.text.trim();
+    String voterId = voterIDController.text.trim();
+    String password = passwordController.text.trim();
+    String phoneNumber = phoneController.text.trim();
 
-//     if (name.isEmpty ||
-//         email.isEmpty ||
-//         password.isEmpty ||
-//         phoneNumber.isEmpty) {
-//       Get.snackbar(
-//         'Error:',
-//         'Please fill ALL the fields',
-//         backgroundColor: Colors.red,
-//       );
-//     } else if (name.length < 3) {
-//       Get.snackbar(
-//         'Error:',
-//         'Name must be at least 3 characters',
-//         backgroundColor: Colors.red,
-//       );
-//     } else if (phoneNumber.length < 11 || phoneNumber.length > 11) {
-//       Get.snackbar('Error:', 'Invalid Phone Number',
-//           backgroundColor: Colors.red);
-//     } else if (!isValidEmail(email)) {
-//       Get.snackbar(
-//         'Error:',
-//         'Invalid Email',
-//         backgroundColor: Colors.red,
-//       );
-//     } else if (phoneNumber.length < 6) {
-//       Get.snackbar(
-//         'Error:',
-//         'Must contain atleast 6 characters',
-//         backgroundColor: Colors.red,
-//       );
-//     } else {
-//       Get.snackbar(
-//           'Congratulation', 'Your Account has been successfully created',
-//           backgroundColor: Colors.green);
+    if (name.isEmpty ||
+        email.isEmpty ||
+        password.isEmpty ||
+        phoneNumber.isEmpty) {
+      Get.snackbar(
+        'Error:',
+        'Please fill ALL the fields',
+        backgroundColor: Colors.red,
+      );
+    } else if (name.length < 3) {
+      Get.snackbar(
+        'Error:',
+        'Name must be at least 3 characters',
+        backgroundColor: Colors.red,
+      );
+    } else if (phoneNumber.length < 11 || phoneNumber.length > 11) {
+      Get.snackbar('Error:', 'Invalid Phone Number',
+          backgroundColor: Colors.red);
+    } else if (!isValidEmail(email)) {
+      Get.snackbar(
+        'Error:',
+        'Invalid Email',
+        backgroundColor: Colors.red,
+      );
+    } else if (phoneNumber.length < 6) {
+      Get.snackbar(
+        'Error:',
+        'Must contain atleast 6 characters',
+        backgroundColor: Colors.red,
+      );
+    } else {
+      Get.snackbar(
+          'Congratulation', 'Your Account has been successfully created',
+          backgroundColor: Colors.green);
 
-//       return false;
-//     }
-//     return true;
-//   }
+      return false;
+    }
+    return true;
+  }
 
-//   //lets create a custom email validator
-//   bool isValidEmail(String email) {
-//     RegExp emailRegExp = RegExp(
-//         r'^[\w-]+(\.[\w-]+)*@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*(\.[a-zA-Z]{2,})$');
-//     return emailRegExp.hasMatch(email);
-//   }
+  //lets create a custom email validator
+  bool isValidEmail(String email) {
+    RegExp emailRegExp = RegExp(
+        r'^[\w-]+(\.[\w-]+)*@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*(\.[a-zA-Z]{2,})$');
+    return emailRegExp.hasMatch(email);
+  }
 
 //   //register the user
-//   void registerValidUser() {
-//     if (!validateForm()) {
-//       signUP();
-//     }
-//   }
+  void registerValidUser() {
+    if (!validateForm()) {
+      signUP();
+    }
+  }
 
-//   //redirect the user
-//   void redirectToSignInPage() {
-//     Navigator.pushAndRemoveUntil(context,
-//         MaterialPageRoute(builder: (e) => const MyPlan()), (route) => true);
-//   }
+  //redirect the user
+  void redirectToSignInPage() {
+    Navigator.pushAndRemoveUntil(context,
+        MaterialPageRoute(builder: (e) => const SignIn()), (route) => true);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -167,6 +197,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       textController: nameController,
                     ),
                     UserTextInput(
+                      labelName: 'Email Address',
+                      textInputType: TextInputType.emailAddress,
+                      textController: emailController,
+                    ),
+                    UserTextInput(
                       labelName: 'Phone Number',
                       textInputType: TextInputType.phone,
                       textController: phoneController,
@@ -196,7 +231,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 Button(
                   text: 'Create an Account',
                   onPressed: () {
-                    //registerNewUser(context);
+                    registerValidUser();
+                    ;
                   },
                   color: MVAColors.primaryColor,
                 ),
@@ -212,7 +248,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => SignIn()));
+                                  builder: (context) => const SignIn()));
                         },
                         child: const Text(
                           'Sign-in here',

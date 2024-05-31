@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_voting_application/components/bottom_navbar.dart';
 import 'package:mobile_voting_application/components/button.dart';
 import 'package:mobile_voting_application/components/user_text_input.dart';
+import 'package:mobile_voting_application/services/auth.dart';
 import 'package:mobile_voting_application/view/authenticate/signup.dart';
 //import 'package:mobile_voting_application/screens/candidate_screen.dart';
 //import 'package:mobile_voting_application/screens/stats_screen.dart';
@@ -22,7 +23,6 @@ class _SignInState extends State<SignIn> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
-  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   void registerNewUser(BuildContext context) async {
     // final FirebaseUser firebaseUser =
     //     (await _firebaseAuth.createUserWithEmailAndPassword(
@@ -33,6 +33,56 @@ class _SignInState extends State<SignIn> {
     //         } else {
     //           //error display
     //         }
+  }
+
+  Future signInUser() async {
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
+
+    // Basic client-side validation (optional)
+    if (!RegExp(
+            r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+\.[a-zA-Z]+$")
+        .hasMatch(email)) {
+      // Show error message: Invalid email format
+      return;
+    }
+
+    if (password.length < 6) {
+      // Show error message: Password must be at least 6 characters
+      return;
+    }
+    showDialog(
+      context: context,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+    try {
+      await AuthService().signIn(
+          email: emailController.text.trim(),
+          password: passwordController.text.trim());
+      await Navigator.pushAndRemoveUntil(context,
+          MaterialPageRoute(builder: (e) => BottomNavBar()), (route) => false);
+
+      print('Logging in as ${emailController.text.trim()}');
+    } on FirebaseAuthException catch (error) {
+// Handle error with proper user feedback
+      String message = 'Login failed.';
+      if (error.code == 'user-not-found') {
+        message = 'The email address is not registered.';
+      } else if (error.code == 'wrong-password') {
+        message = 'The password is incorrect.';
+      } else {
+        print('Login error: ${error.message}');
+      }
+
+      // Show user-friendly error message (e.g., snackbar or alert dialog)
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+        ),
+      );
+    }
   }
 
   @override
@@ -83,9 +133,9 @@ class _SignInState extends State<SignIn> {
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       TextButton(
-                        onPressed: () {
+                        onPressed: () async {
                           //if(emailController.text.le)
-                          registerNewUser(context);
+                          await signInUser();
                         },
                         child: const Text(
                           'Forgot password?',
@@ -104,12 +154,8 @@ class _SignInState extends State<SignIn> {
                   Button(
                       text: "Sign In",
                       color: MVAColors.primaryColor,
-                      onPressed: () {
-                        Navigator.pushAndRemoveUntil(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const BottomNavBar()),
-                            (route) => false);
+                      onPressed: () async {
+                        await signInUser();
                       }),
                   const SizedBox(
                     height: 20,

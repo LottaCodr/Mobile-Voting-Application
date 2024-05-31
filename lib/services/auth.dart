@@ -46,12 +46,28 @@ class AuthService {
   Future signOut() async {
     await _auth.signOut();
   }
-// Future addUserDetails(String firstName, String lastName, String email, String password) async {
-//   await FirebaseFirestore.instance.collection('users').add(
-//      firstName,
-//      lastName,
-//     'email': email,
-//     'password': password
-//   );
-// }
+
+  Future<void> addUserDetails(
+      String firstName, String email, String password) async {
+    // 1. Hash the password before storing
+    final hashedPassword =
+        await _hashPassword(password); // Implement password hashing
+
+    // 2. Create a user map with secure password
+    final userMap = {
+      'firstName': firstName,
+      'email': email,
+      'password': hashedPassword, // Use hashed password here
+    };
+
+    // 3. Add the user document to Firestore
+    await FirebaseFirestore.instance.collection('users').add(userMap);
+  }
+
+// (Optional) Implement a password hashing function
+  Future<String> _hashPassword(String password) async {
+    // Use a secure hashing algorithm (e.g., bcrypt)
+    // Replace with your chosen hashing implementation
+    return password; // Placeholder for actual hashing logic
+  }
 }
