@@ -8,6 +8,7 @@ import 'package:mobile_voting_application/services/auth.dart';
 import 'package:mobile_voting_application/view/authenticate/sign_in.dart';
 import 'package:mobile_voting_application/utilities/colors.dart';
 
+import '../../components/bottom_navbar.dart';
 import '../../components/user_text_input.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -53,13 +54,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(
-            builder: (context) => SignIn()), // Replace with your home screen
+            builder: (context) => BottomNavBar()), // Redirect user to HomeScreen after signup
         (route) => false,
       );
 
       //Create a reference to the users collection in firestore
       CollectionReference userRef =
-          FirebaseFirestore.instance.collection("users");
+          FirebaseFirestore.instance.collection("voters");
 
       //Create a new document in the users collection with the userID
       await userRef.doc(userID).set({

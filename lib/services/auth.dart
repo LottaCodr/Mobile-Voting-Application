@@ -6,19 +6,6 @@ class AuthService {
   Stream<User?> get authStateChanges => _auth.authStateChanges();
   User? get currentUser => _auth.currentUser;
 
-//   //sign in anon
-
-//   Future signInAnon() async {
-//     try {
-//       AuthResult result = await _auth.signInAnonymously();
-//       FireBaseUser user = result.user;
-//       return user;
-//     } catch (e) {
-//       print(e.toString());
-//       return null;
-//     }
-//   }
-// }
 
   Future signIn({required String email, required String password}) async {
     if (passwordConfirmed()) {
@@ -71,3 +58,17 @@ class AuthService {
     return password; // Placeholder for actual hashing logic
   }
 }
+
+//   //sign in anon
+
+//   Future signInAnon() async {
+//     try {
+//       AuthResult result = await _auth.signInAnonymously();
+//       FireBaseUser user = result.user;
+//       return user;
+//     } catch (e) {
+//       print(e.toString());
+//       return null;
+//     }
+//   }
+// }
