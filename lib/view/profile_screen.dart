@@ -24,14 +24,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Center(
             child: Column(
               children: [
-                CircleAvatar(
-                  radius: 70,
+                SizedBox(
+                  width: 130,
+                  height: 130,
+                  child: ClipOval(
+                    child: Image.asset('assets/imageUrl/user.jpg',
+                        fit: BoxFit.fill),
+                  ),
                 ),
                 Text(
-                  'Full Name here',
+                  'Lotanna Chuka',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
                 ),
-                Text('Voters ID Number'),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.verified,
+                      color: Colors.green,
+                    ),
+                    SizedBox(
+                      width: 3,
+                    ),
+                    Text('NIN 69898768655'),
+                  ],
+                ),
                 SizedBox(
                   height: 50,
                 ),

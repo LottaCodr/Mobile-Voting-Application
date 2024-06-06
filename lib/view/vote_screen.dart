@@ -4,7 +4,7 @@ import 'package:mobile_voting_application/components/selection_card.dart';
 import 'package:mobile_voting_application/models/candidate_model.dart';
 import 'package:mobile_voting_application/models/election_model.dart';
 import 'package:mobile_voting_application/utilities/colors.dart';
-
+import 'package:get/get.dart';
 import '../components/election_card.dart';
 
 class VoteScreen extends StatefulWidget {

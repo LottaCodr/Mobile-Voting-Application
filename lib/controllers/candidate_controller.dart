@@ -16,18 +16,13 @@ class CandidateController extends GetxController {
     super.onInit();
     votes.value = candidate!.votes;
     totalLiveVote.value = presidentialElection.totalVotes;
-    // isVoted.value = electionController.isVOtedCandidate(candidate!);
+    isVoted.value = electionController.isCandidateSelected(
+        candidate!.electionId, candidate!.id);
   }
 
   var isVoted = false.obs; //using the obs for reactive state
   var votes = 0.obs;
   var totalLiveVote = 0.obs;
-
-  // @override
-  // void onInit() {
-  //   super.onInit();
-  //   votes.value = candidate!.votes;
-  // }
 
   void makeVote() async {
     await Future.delayed(const Duration(milliseconds: 500));
@@ -36,12 +31,10 @@ class CandidateController extends GetxController {
       votes.value = candidate!.votes;
       presidentialElection.totalVotes++;
       isVoted.value = true;
-
-      // electionController.voteForCandidate(candidate!);
-      print('You have voted for ${candidate?.name}');
+      electionController.selectCandidate(candidate!.electionId, candidate!.id);
 
       Get.snackbar(
-          'Vote Counted', 'Vote submitted successfully for  ${candidate?.name}',
+          'Vote Counted', 'Vote submitted successfully for ${candidate?.name}',
           backgroundColor: Colors.green, colorText: Colors.white);
 
       update();
@@ -55,8 +48,7 @@ class CandidateController extends GetxController {
       votes.value = candidate!.votes;
       presidentialElection.totalVotes--;
       isVoted.value = false;
-      // electionController.cancelVote();
-      print('Cancelled vote for ${candidate?.name}');
+      electionController.selectCandidate(candidate!.electionId, -1);
 
       Get.snackbar('Cancelled Vote', 'Cancelled for ${candidate?.name} ',
           backgroundColor: Colors.red,

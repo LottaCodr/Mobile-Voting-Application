@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import 'package:mobile_voting_application/controllers/election_controller.dart';
 import 'package:mobile_voting_application/models/candidate_model.dart';
 import 'package:mobile_voting_application/view/candidate_screen.dart';
-
 import '../controllers/candidate_controller.dart';
 import '../utilities/colors.dart';
 
@@ -31,18 +30,8 @@ class ElectionCard extends StatelessWidget {
       print('Reading mandate');
     }
 
-    // void onPressedVote(CandidateController controller) {
-    //   if (controller.isVoted.value) {
-    //     controller.cancelVote();
-    //   } else {
-    //     controller.makeVote();
-    //   }
-    //   Get.snackbar('Successfully Vote', 'You have voted for ${candidate.name}',
-    //       colorText: Colors.white, backgroundColor: Colors.green);
-    // }
-
     final CandidateController controller =
-        Get.put(CandidateController(candidate));
+        Get.put(CandidateController(candidate), tag: candidate.id.toString());
     final ElectionController electionController =
         Get.find<ElectionController>();
 
@@ -159,7 +148,6 @@ class ElectionCard extends StatelessWidget {
                       onPressed: () {
                         if (controller.isVoted.value) {
                           controller.cancelVote();
-                          //electionController.selectCandidate(-1);
                         } else {
                           controller.makeVote();
                         }
@@ -221,8 +209,8 @@ class ElectionButton extends StatelessWidget {
                 buttonName,
                 style: TextStyle(
                     color: textColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16),
+                    fontSize: 15,
+                    overflow: TextOverflow.ellipsis),
               ),
             ),
             const SizedBox(
@@ -231,6 +219,7 @@ class ElectionButton extends StatelessWidget {
             Icon(
               icon,
               color: iconColor,
+              size: 18,
             )
           ],
         ),

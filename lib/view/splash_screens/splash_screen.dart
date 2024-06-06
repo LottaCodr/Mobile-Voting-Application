@@ -1,4 +1,5 @@
 import 'package:easy_splash_screen/easy_splash_screen.dart';
+import 'package:mobile_voting_application/components/bottom_navbar.dart';
 import 'package:mobile_voting_application/utilities/colors.dart';
 import 'package:mobile_voting_application/view/splash_screens/first_splash.dart';
 import 'package:flutter/material.dart';
@@ -29,7 +30,7 @@ class _SplashPageState extends State<SplashPage> {
       showLoader: true,
       loaderColor: MVAColors.primaryColor,
       loadingText: const Text("Welcome to the Patriot..."),
-      navigator: const OnBoardingScreen(),
+      navigator: const BottomNavBar(),
       durationInSeconds: 6,
     );
   }

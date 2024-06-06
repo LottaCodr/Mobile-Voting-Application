@@ -71,7 +71,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
                 height: 25,
                 child: ClipOval(
                   child: Image.asset(
-                    'assets/imageUrl/worthy.jpeg',
+                    'assets/imageUrl/user.jpg',
                     fit: BoxFit.fill,
                   ),
                 ),
@@ -81,7 +81,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
                 height: 40,
                 child: ClipOval(
                   child: Image.asset(
-                    'assets/imageUrl/worthy.jpeg',
+                    'assets/imageUrl/user.jpg',
                     fit: BoxFit.fill,
                   ),
                 ),
