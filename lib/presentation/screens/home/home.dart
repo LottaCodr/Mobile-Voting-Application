@@ -1,13 +1,17 @@
 //import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dots_indicator/dots_indicator.dart';
 import 'package:flutter/material.dart';
-import 'package:mobile_voting_application/components/the_home%20widgets/completed_tab.dart';
-import 'package:mobile_voting_application/components/the_home%20widgets/live_tab.dart';
+import 'package:mobile_voting_application/presentation/widgets/the_home widgets/completed_tab.dart';
+import 'package:mobile_voting_application/presentation/widgets/the_home widgets/live_tab.dart';
 
+import 'package:mobile_voting_application/presentation/widgets/the_home widgets/tab_cards/live_card.dart';
+import 'package:mobile_voting_application/data/models/election_model.dart';
 
+import 'package:mobile_voting_application/core/theme/colors.dart';
 
-import 'package:mobile_voting_application/utilities/colors.dart';
-
+import '../../components/candidate_scorecard.dart';
 import '../../components/the_home widgets/upcoming_tab.dart';
+import '../authenticate/sign_in.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -25,8 +29,21 @@ class _HomeState extends State<Home> {
       {'text': 'Live', 'icon': Icons.play_arrow},
       {'text': 'Completed', 'icon': Icons.check_circle},
     ];
-    List<Widget> tabBarViews = const [UpcomingTab(), LiveTab(), CompletedTab()];
+    List<Widget> tabBarViews = [UpcomingTab(), LiveTab(), CompletedTab()];
 
+    // for (final label in tabLabels) {
+    //   Future < ElectionModel> _electionModel() async{
+    //     if(ElectionModel.isNotEmpty) {
+
+    //     }
+    //   }
+    // }
+
+    // tabBarViews.add(
+    //   LiveTab(),
+    // );
+    // tabBarViews.add(CompletedTab());
+    // tabBarViews.add(UpcomingTab());
 
     return DefaultTabController(
       length: 3,
@@ -35,7 +52,7 @@ class _HomeState extends State<Home> {
         appBar: AppBar(
           bottom: TabBar(
               indicatorWeight: 4,
-              labelPadding: const EdgeInsets.only(right: 24, left: 24),
+              labelPadding: EdgeInsets.only(right: 24, left: 24),
               labelColor: MVAColors.primaryColor,
               indicatorColor: MVAColors.primaryColor,
               isScrollable: true,
@@ -61,11 +78,7 @@ class _HomeState extends State<Home> {
                 color: MVAColors.primaryColor),
           ),
         ),
-        body: Column( 
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-          TabBarView(children: tabBarViews),
-        ],)
+        body: TabBarView(children: tabBarViews),
       ),
     );
   }
