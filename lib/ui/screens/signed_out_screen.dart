@@ -1,21 +1,24 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
 
-import '../../core/app_scope.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../core/app_theme.dart';
 import '../../data/app_services.dart';
 import '../../data/auth_gateway.dart';
+import '../../state/app_state.dart';
 import '../widgets/common.dart';
 
 enum _AuthView { welcome, signIn, signUp }
 
-class SignedOutScreen extends StatefulWidget {
+class SignedOutScreen extends ConsumerStatefulWidget {
   const SignedOutScreen({super.key});
 
   @override
-  State<SignedOutScreen> createState() => _SignedOutScreenState();
+  ConsumerState<SignedOutScreen> createState() => _SignedOutScreenState();
 }
 
-class _SignedOutScreenState extends State<SignedOutScreen> {
+class _SignedOutScreenState extends ConsumerState<SignedOutScreen> {
   _AuthView _view = _AuthView.welcome;
 
   @override
@@ -39,131 +42,137 @@ class _SignedOutScreenState extends State<SignedOutScreen> {
   }
 }
 
-class _WelcomePanel extends StatelessWidget {
+class _WelcomePanel extends ConsumerWidget {
   const _WelcomePanel({required this.onSignIn, required this.onSignUp});
 
   final VoidCallback onSignIn;
   final VoidCallback onSignUp;
 
   @override
-  Widget build(BuildContext context) {
-    final controller = AppScope.of(context);
-    final isDemo = controller.services.mode == AppDataMode.demo;
-
+  Widget build(BuildContext context, WidgetRef ref) {
+    final mode = ref.watch(appServicesProvider).mode;
+    final isDemo = mode == AppDataMode.demo;
     return Scaffold(
       body: PageFrame(
         child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 14),
-                    const AppLogo(),
-                    const SizedBox(height: 56),
-                    Semantics(
-                      container: true,
-                      label: isDemo ? 'CivicVote product preview' : 'CivicVote secure voter portal',
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: isDemo ? AppColors.goldPale : AppColors.tealPale,
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              isDemo ? Icons.science_outlined : Icons.lock_outline_rounded,
-                              size: 16,
-                              color: isDemo ? AppColors.gold : AppColors.teal,
-                            ),
-                            const SizedBox(width: 7),
-                            Text(
-                              isDemo ? 'PRODUCT PREVIEW' : 'SECURE VOTER PORTAL',
-                              style: TextStyle(
-                                color: isDemo ? AppColors.gold : AppColors.teal,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 0.7,
-                                fontSize: 11,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+          builder: (context, constraints) => SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  const SizedBox(height: 14),
+                  const AppLogo(),
+                  const SizedBox(height: 56),
+                  _SecurityChip(isDemo: isDemo),
+                  const SizedBox(height: 18),
+                  Text(
+                    'Your voice, ready when you are.',
+                    style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                      color: AppColors.navy,
+                      fontWeight: FontWeight.w800,
+                      height: 1.08,
+                      letterSpacing: -1.25,
                     ),
-                    const SizedBox(height: 18),
-                    Text(
-                      'Your voice, ready when you are.',
-                      style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                        color: AppColors.navy,
-                        fontWeight: FontWeight.w800,
-                        height: 1.08,
-                        letterSpacing: -1.25,
-                      ),
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    isDemo
+                        ? 'Explore an accessible, fictional multi-contest ballot before connecting your own Supabase project.'
+                        : 'Review eligible ballots, complete secure verification, and follow authority-published results in one calm place.',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyLarge?.copyWith(color: AppColors.inkMuted, height: 1.55),
+                  ),
+                  const SizedBox(height: 32),
+                  const _PromiseRow(
+                    icon: Icons.fact_check_outlined,
+                    title: 'Review every contest',
+                    description: 'Your ballot stays editable until the explicit confirmation step.',
+                  ),
+                  const SizedBox(height: 18),
+                  const _PromiseRow(
+                    icon: Icons.verified_user_outlined,
+                    title: 'Eligibility-aware',
+                    description: 'Only authority-assigned ballots can be submitted.',
+                  ),
+                  const SizedBox(height: 18),
+                  const _PromiseRow(
+                    icon: Icons.visibility_off_outlined,
+                    title: 'Privacy by design',
+                    description: 'Submission status and receipts never reveal a candidate choice.',
+                  ),
+                  const SizedBox(height: 38),
+                  if (isDemo) ...<Widget>[
+                    FilledButton.icon(
+                      key: const Key('exploreDemoButton'),
+                      onPressed: () => ref.read(sessionProvider.notifier).enterDemo(),
+                      icon: const Icon(Icons.play_arrow_rounded),
+                      label: const Text('Explore demo ballot'),
                     ),
-                    const SizedBox(height: 14),
-                    Text(
-                      isDemo
-                          ? 'Explore an accessible, fictional ballot before connecting your own Supabase project.'
-                          : 'Review official ballot information, cast a verified vote, and follow published results in one calm place.',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodyLarge?.copyWith(color: AppColors.inkMuted, height: 1.55),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Nothing in demo mode is an official vote.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: AppColors.inkMuted, fontSize: 12),
                     ),
-                    const SizedBox(height: 32),
-                    const _PromiseRow(
-                      icon: Icons.fact_check_outlined,
-                      title: 'Review before you submit',
-                      description: 'Clear candidate information and an explicit confirmation step.',
+                  ] else ...<Widget>[
+                    FilledButton(
+                      key: const Key('signInButton'),
+                      onPressed: onSignIn,
+                      child: const Text('Sign in securely'),
                     ),
-                    const SizedBox(height: 18),
-                    const _PromiseRow(
-                      icon: Icons.verified_user_outlined,
-                      title: 'Verification-aware',
-                      description: 'Your eligibility status is visible before a ballot opens.',
+                    const SizedBox(height: 12),
+                    OutlinedButton(
+                      key: const Key('createAccountButton'),
+                      onPressed: onSignUp,
+                      child: const Text('Create a voter account'),
                     ),
-                    const SizedBox(height: 18),
-                    const _PromiseRow(
-                      icon: Icons.visibility_off_outlined,
-                      title: 'Privacy by design',
-                      description: 'The client never reads a voter-to-candidate record.',
-                    ),
-                    const SizedBox(height: 38),
-                    if (isDemo) ...[
-                      FilledButton.icon(
-                        key: const Key('exploreDemoButton'),
-                        onPressed: controller.enterDemo,
-                        icon: const Icon(Icons.play_arrow_rounded),
-                        label: const Text('Explore demo ballot'),
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'Nothing in demo mode is an official vote.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: AppColors.inkMuted, fontSize: 12),
-                      ),
-                    ] else ...[
-                      FilledButton(
-                        key: const Key('signInButton'),
-                        onPressed: onSignIn,
-                        child: const Text('Sign in securely'),
-                      ),
-                      const SizedBox(height: 12),
-                      OutlinedButton(
-                        key: const Key('createAccountButton'),
-                        onPressed: onSignUp,
-                        child: const Text('Create a voter account'),
-                      ),
-                    ],
-                    const SizedBox(height: 28),
                   ],
-                ),
+                  const SizedBox(height: 28),
+                ],
               ),
-            );
-          },
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SecurityChip extends StatelessWidget {
+  const _SecurityChip({required this.isDemo});
+
+  final bool isDemo;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isDemo ? AppColors.gold : AppColors.teal;
+    final background = isDemo ? AppColors.goldPale : AppColors.tealPale;
+    return Semantics(
+      label: isDemo ? 'CivicVote product preview' : 'CivicVote secure voter portal',
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(999)),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Icon(
+              isDemo ? Icons.science_outlined : Icons.lock_outline_rounded,
+              size: 16,
+              color: color,
+            ),
+            const SizedBox(width: 7),
+            Text(
+              isDemo ? 'PRODUCT PREVIEW' : 'SECURE VOTER PORTAL',
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.7,
+                fontSize: 11,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -181,7 +190,7 @@ class _PromiseRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+      children: <Widget>[
         Container(
           width: 42,
           height: 42,
@@ -195,7 +204,7 @@ class _PromiseRow extends StatelessWidget {
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+            children: <Widget>[
               Text(
                 title,
                 style: const TextStyle(color: AppColors.navy, fontWeight: FontWeight.w800),
@@ -210,7 +219,7 @@ class _PromiseRow extends StatelessWidget {
   }
 }
 
-class _AuthPanel extends StatefulWidget {
+class _AuthPanel extends ConsumerStatefulWidget {
   const _AuthPanel({required this.mode, required this.onBack, required this.onSwitch});
 
   final _AuthView mode;
@@ -218,10 +227,10 @@ class _AuthPanel extends StatefulWidget {
   final VoidCallback onSwitch;
 
   @override
-  State<_AuthPanel> createState() => _AuthPanelState();
+  ConsumerState<_AuthPanel> createState() => _AuthPanelState();
 }
 
-class _AuthPanelState extends State<_AuthPanel> {
+class _AuthPanelState extends ConsumerState<_AuthPanel> {
   final _formKey = GlobalKey<FormState>();
   final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -243,37 +252,30 @@ class _AuthPanelState extends State<_AuthPanel> {
   }
 
   Future<void> _submit() async {
-    final form = _formKey.currentState;
-    if (form == null || !form.validate()) return;
+    if (!(_formKey.currentState?.validate() ?? false)) return;
     setState(() => _isBusy = true);
-    final controller = AppScope.of(context);
-
     try {
       if (_isSignUp) {
-        final result = await controller.signUp(
-          fullName: _fullNameController.text.trim(),
-          email: _emailController.text.trim(),
-          password: _passwordController.text,
-        );
-        if (!mounted) return;
-        if (result.requiresEmailConfirmation) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Check your email to confirm your new account, then sign in.'),
-            ),
-          );
+        final result = await ref
+            .read(sessionProvider.notifier)
+            .signUp(
+              fullName: _fullNameController.text.trim(),
+              email: _emailController.text.trim(),
+              password: _passwordController.text,
+            );
+        if (mounted && result.requiresEmailConfirmation) {
+          _message('Check your email to confirm the account, then sign in.');
           widget.onSwitch();
         }
       } else {
-        await controller.signIn(
-          email: _emailController.text.trim(),
-          password: _passwordController.text,
-        );
+        await ref
+            .read(sessionProvider.notifier)
+            .signIn(email: _emailController.text.trim(), password: _passwordController.text);
       }
     } on AuthFailure catch (error) {
-      if (mounted) _showMessage(error.message);
+      if (mounted) _message(error.message);
     } catch (_) {
-      if (mounted) _showMessage('Something went wrong. Please try again.');
+      if (mounted) _message('Something went wrong. Please try again.');
     } finally {
       if (mounted) setState(() => _isBusy = false);
     }
@@ -282,23 +284,21 @@ class _AuthPanelState extends State<_AuthPanel> {
   Future<void> _resetPassword() async {
     final email = _emailController.text.trim();
     if (!_isEmail(email)) {
-      _showMessage('Enter your email address first, then try again.');
+      _message('Enter your email address first, then try again.');
       return;
     }
     setState(() => _isBusy = true);
     try {
-      await AppScope.of(context).resetPassword(email);
-      if (mounted) {
-        _showMessage('If an account exists for that address, a reset email is on its way.');
-      }
+      await ref.read(sessionProvider.notifier).resetPassword(email);
+      if (mounted) _message('If an account exists for that address, a reset email is on its way.');
     } on AuthFailure catch (error) {
-      if (mounted) _showMessage(error.message);
+      if (mounted) _message(error.message);
     } finally {
       if (mounted) setState(() => _isBusy = false);
     }
   }
 
-  void _showMessage(String message) {
+  void _message(String message) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(message)));
@@ -309,8 +309,7 @@ class _AuthPanelState extends State<_AuthPanel> {
     final title = _isSignUp ? 'Create your voter account' : 'Welcome back';
     final subtitle = _isSignUp
         ? 'Use details that match your eligibility record. Verification happens separately.'
-        : 'Sign in to view your eligible elections and ballot status.';
-
+        : 'Sign in to view your assigned elections and secure ballot status.';
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -330,7 +329,7 @@ class _AuthPanelState extends State<_AuthPanel> {
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+                  children: <Widget>[
                     Text(
                       title,
                       style: Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -341,20 +340,18 @@ class _AuthPanelState extends State<_AuthPanel> {
                     const SizedBox(height: 9),
                     Text(subtitle, style: const TextStyle(color: AppColors.inkMuted, height: 1.5)),
                     const SizedBox(height: 30),
-                    if (_isSignUp) ...[
+                    if (_isSignUp) ...<Widget>[
                       TextFormField(
                         controller: _fullNameController,
                         textCapitalization: TextCapitalization.words,
                         textInputAction: TextInputAction.next,
-                        autofillHints: const [AutofillHints.name],
+                        autofillHints: const <String>[AutofillHints.name],
                         decoration: const InputDecoration(
                           labelText: 'Full name',
                           prefixIcon: Icon(Icons.person_outline_rounded),
                         ),
-                        validator: (value) {
-                          if ((value ?? '').trim().length < 2) return 'Enter your full name.';
-                          return null;
-                        },
+                        validator: (value) =>
+                            (value ?? '').trim().length < 2 ? 'Enter your full name.' : null,
                       ),
                       const SizedBox(height: 16),
                     ],
@@ -362,7 +359,7 @@ class _AuthPanelState extends State<_AuthPanel> {
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
-                      autofillHints: const [AutofillHints.email],
+                      autofillHints: const <String>[AutofillHints.email],
                       decoration: const InputDecoration(
                         labelText: 'Email address',
                         prefixIcon: Icon(Icons.alternate_email_rounded),
@@ -375,10 +372,12 @@ class _AuthPanelState extends State<_AuthPanel> {
                       controller: _passwordController,
                       obscureText: _obscurePassword,
                       textInputAction: _isSignUp ? TextInputAction.next : TextInputAction.done,
-                      autofillHints: [
+                      autofillHints: <String>[
                         _isSignUp ? AutofillHints.newPassword : AutofillHints.password,
                       ],
-                      onFieldSubmitted: (_) => _isSignUp ? null : _submit(),
+                      onFieldSubmitted: (_) {
+                        if (!_isSignUp) unawaited(_submit());
+                      },
                       decoration: InputDecoration(
                         labelText: 'Password',
                         prefixIcon: const Icon(Icons.lock_outline_rounded),
@@ -392,19 +391,17 @@ class _AuthPanelState extends State<_AuthPanel> {
                           ),
                         ),
                       ),
-                      validator: (value) {
-                        if ((value ?? '').length < 8) return 'Use at least 8 characters.';
-                        return null;
-                      },
+                      validator: (value) =>
+                          (value ?? '').length < 8 ? 'Use at least 8 characters.' : null,
                     ),
-                    if (_isSignUp) ...[
+                    if (_isSignUp) ...<Widget>[
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _confirmPasswordController,
                         obscureText: _obscureConfirmPassword,
                         textInputAction: TextInputAction.done,
-                        autofillHints: const [AutofillHints.newPassword],
-                        onFieldSubmitted: (_) => _submit(),
+                        autofillHints: const <String>[AutofillHints.newPassword],
+                        onFieldSubmitted: (_) => unawaited(_submit()),
                         decoration: InputDecoration(
                           labelText: 'Confirm password',
                           prefixIcon: const Icon(Icons.lock_reset_outlined),
@@ -419,23 +416,21 @@ class _AuthPanelState extends State<_AuthPanel> {
                             ),
                           ),
                         ),
-                        validator: (value) {
-                          if (value != _passwordController.text) return 'Passwords do not match.';
-                          return null;
-                        },
+                        validator: (value) =>
+                            value != _passwordController.text ? 'Passwords do not match.' : null,
                       ),
                     ],
                     if (!_isSignUp)
                       Align(
                         alignment: Alignment.centerRight,
                         child: TextButton(
-                          onPressed: _isBusy ? null : _resetPassword,
+                          onPressed: _isBusy ? null : () => unawaited(_resetPassword()),
                           child: const Text('Forgot password?'),
                         ),
                       ),
                     const SizedBox(height: 20),
                     FilledButton(
-                      onPressed: _isBusy ? null : _submit,
+                      onPressed: _isBusy ? null : () => unawaited(_submit()),
                       child: _isBusy
                           ? const SizedBox(
                               width: 22,
@@ -450,7 +445,7 @@ class _AuthPanelState extends State<_AuthPanel> {
                     const SizedBox(height: 18),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
+                      children: <Widget>[
                         Text(_isSignUp ? 'Already have an account?' : 'New to CivicVote?'),
                         TextButton(
                           onPressed: _isBusy ? null : widget.onSwitch,
@@ -460,7 +455,7 @@ class _AuthPanelState extends State<_AuthPanel> {
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'Account passwords are handled by Supabase Auth and are never stored in the voter profile.',
+                      'Passwords are handled by Supabase Auth and are never stored in a voter profile.',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: AppColors.inkMuted, fontSize: 12, height: 1.45),
                     ),
@@ -475,6 +470,4 @@ class _AuthPanelState extends State<_AuthPanel> {
   }
 }
 
-bool _isEmail(String value) {
-  return RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(value);
-}
+bool _isEmail(String value) => RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(value);

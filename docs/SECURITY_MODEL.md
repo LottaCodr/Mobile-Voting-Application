@@ -1,81 +1,112 @@
-# Security model and operational notes
+# Security model and verification plan
 
-## Scope
+## Scope and boundary
 
-This document describes the implemented Supabase boundary. It does **not** claim that the repository is sufficient for a binding governmental election. A certified election requires far more than a mobile client and database schema: independent security assessment, threat modeling, cryptographic/audit requirements appropriate to the jurisdiction, identity assurance, operational controls, incident response, accessibility accommodations, and legal approval.
+This repository implements a defensible **application foundation**: Supabase Auth, Row Level Security, authority roles, election-specific assignment, anonymous ballot rows, receipt-safe status recovery, and audit-aware operations.
 
-## Trust boundaries
+It is **not a certification claim**. A binding election additionally requires an authority-approved voter-roll process, legal review, independent security assessment, privacy impact assessment, operational monitoring, recovery/support procedures, accessibility accommodations, and jurisdiction-specific election certification.
 
-| Component | Trusted for | Must not be trusted for |
+## Data separation
+
+| Store | Contains | Does not contain |
 | --- | --- | --- |
-| Flutter client | Displaying public ballot data, collecting an explicit candidate choice, calling auth/RPC APIs | Counting votes, enforcing eligibility, preventing repeat votes, storing service secrets, or proving ballot secrecy by itself |
-| Supabase Auth | Password lifecycle and authenticated user id | Election eligibility decision without a separate verification workflow |
-| `profiles` | Voter verification state owned by the authority | Storing passwords or a ballot history |
-| `cast_vote` PostgreSQL RPC | Atomic vote eligibility/window/candidate/duplicate checks | Administrator identity verification or full election certification |
-| `votes` | Private one-vote enforcement and count source | Any client-readable personal voting history |
-| `election_results` view | Published aggregate counts only | Voter identities, vote ids, timestamps, or candidate/voter linkage |
+| `profiles` | User-facing display/verification metadata | Passwords, candidate choices |
+| `ballot_assignments` | Voter-to-election eligibility, submitted state, receipt code | Candidate or contest selection |
+| `anonymous_votes` | Election, contest, candidate, cast time | Voter id, assignment id, receipt code |
+| `result_snapshots` | Aggregate candidate totals | Any voter identity or ballot row |
+| `notifications` | Receipt-safe authority messages | Candidate/contest choices |
+| `audit_events` | Operational event type/target/metadata | Candidate selection data |
 
-## Implemented controls
+The `submit_ballot` transaction sees both the authenticated user and the selected choices briefly in order to enforce eligibility and atomically write data. It stores them in separate tables without a database foreign key between an anonymous vote and a voter assignment. This improves application-level separation, but it does not replace an independently reviewed cryptographic secret-ballot protocol if one is required by the jurisdiction.
 
-1. **No Firebase / no local vote counter.** The old mutable UI counter and Firestore writes are gone.
-2. **No service-role key in Flutter.** The runtime accepts only `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` via Dart defines.
-3. **RLS everywhere.** All public-schema tables in the migration explicitly enable RLS.
-4. **Least privileges.** Clients can select public elections/candidates and their own profile only. They receive no `SELECT`, `INSERT`, `UPDATE`, or `DELETE` grant on `votes` or `vote_receipts`.
-5. **Verification cannot be self-issued.** The app cannot update `verification_status`; an authority-controlled workflow must do so.
-6. **Atomic submission.** `cast_vote` authenticates `auth.uid()`, checks verified profile, locks/validates the election window, validates candidate membership, and writes under a database uniqueness constraint in one transaction.
-7. **Fixed search path.** The necessary `SECURITY DEFINER` RPC uses `set search_path = ''` and schema-qualified objects. It is revoked from `PUBLIC` and granted only to `authenticated`.
-8. **Aggregate-only results.** The public view has no vote/voter identifier or timestamp and returns results only when `results_visible` is true.
-9. **Fail closed.** If Dart defines name a backend but Supabase cannot start, the app shows a service failure rather than using a device-local voting fallback.
+Ballot choices are deliberately **not persisted on-device** for offline replay. If connectivity is uncertain after submission, the voter reopens the ballot and uses `get_my_ballot_status` to retrieve a receipt-safe server answer.
 
-## Verifying the migration
+## Enforcement sequence
 
-Run these checks in an isolated local/project environment after applying the migration. Adapt role setup to your Supabase version.
+`public.submit_ballot(p_election_id, p_choices)` is the only enabled client submission path. It checks, in one database transaction:
+
+1. `auth.uid()` is present.
+2. The election is live and inside the server-clock window.
+3. AAL2/MFA is present when the election requires it.
+4. The profile is authority-verified.
+5. A matching `ballot_assignments` row is eligible and not already submitted.
+6. Every required contest has exactly one choice.
+7. Every candidate belongs to the supplied election and contest.
+8. Anonymous vote rows are inserted.
+9. The assignment changes to `submitted`, a receipt is generated, and a receipt-safe audit/notification event is recorded.
+
+A database transaction rolls all of that back if any step fails.
+
+## RLS and privileges
+
+- RLS is enabled on all public tables.
+- Voters can read only their profile and notifications.
+- Raw assignments, `anonymous_votes`, legacy `votes`, receipts, roles, and audit data have no general client read/write access.
+- Public election/candidate/result reads are governed by publication/result policies.
+- `get_my_elections`, `get_my_ballot_status`, and preference RPCs return only the caller’s safe metadata.
+- Authority operations are protected by `private.has_role` / `private.has_any_role` checks using `auth.uid()`.
+- Security-definer functions fix `search_path = ''` and schema-qualify relations.
+- The legacy `cast_vote` function is revoked from authenticated users; all new ballots use `submit_ballot`.
+
+## SQL inspection checks
 
 ```sql
--- Confirm RLS is enabled on all private/public API tables.
+-- RLS must be enabled on all sensitive tables.
 select relname, relrowsecurity
 from pg_class
 join pg_namespace on pg_namespace.oid = pg_class.relnamespace
 where nspname = 'public'
-  and relname in ('profiles', 'elections', 'candidates', 'votes', 'vote_receipts');
+  and relname in (
+    'profiles', 'user_roles', 'ballot_assignments', 'anonymous_votes',
+    'result_snapshots', 'notifications', 'audit_events'
+  );
 
--- Confirm clients do not hold direct vote-table privileges.
-select grantee, privilege_type
+-- App roles must not have direct raw-ballot privileges.
+select grantee, table_name, privilege_type
 from information_schema.role_table_grants
 where table_schema = 'public'
-  and table_name in ('votes', 'vote_receipts')
+  and table_name in ('anonymous_votes', 'ballot_assignments', 'votes', 'vote_receipts')
 order by table_name, grantee, privilege_type;
 
--- Confirm the only callable vote-writing public routine is restricted.
-select routine_schema, routine_name, grantee, privilege_type
-from information_schema.routine_privileges
-where routine_schema = 'public'
-  and routine_name = 'cast_vote';
-
--- Inspect the result-view contract. It must contain no voter_id, vote id,
--- cast time, or raw ballot row.
+-- A future anonymous vote table must have no identity linkage columns.
 select column_name
 from information_schema.columns
-where table_schema = 'public' and table_name = 'election_results'
+where table_schema = 'public' and table_name = 'anonymous_votes'
 order by ordinal_position;
+
+-- Verify public RPC grants deliberately.
+select routine_name, grantee, privilege_type
+from information_schema.routine_privileges
+where routine_schema = 'public'
+  and routine_name in (
+    'submit_ballot', 'get_my_elections', 'get_my_ballot_status',
+    'admin_set_voter_verification', 'admin_assign_voter_to_election'
+  )
+order by routine_name, grantee;
 ```
 
-For automated assurance, add pgTAP tests that impersonate `anon`, an unverified authenticated user, a verified user, and a second verified user. At minimum test that:
+## Test matrix
 
-- anonymous users cannot invoke a vote;
-- unverified users cannot invoke a vote;
-- a verified user cannot cast twice in the same election;
-- a candidate from another election is rejected;
-- a closed/upcoming election is rejected;
-- direct insert/select against `votes` fails for client roles;
-- result rows do not expose ballot identifiers.
+Automate these against a local/staging Supabase project:
 
-## Operational controls still required
+| Actor | Expected outcome |
+| --- | --- |
+| Anonymous visitor | Cannot submit, see assignments, profiles, raw ballots, or notifications. |
+| Unverified authenticated user | Cannot submit, even if assigned. |
+| Verified but unassigned user | Cannot submit or discover another user’s assigned ballot. |
+| Verified assigned AAL1 user | Rejected when `requires_mfa = true`. |
+| Verified assigned AAL2 user | Can submit exactly one complete ballot. |
+| Same voter after submit | Receives only submitted status/receipt; a second submission is rejected. |
+| Candidate from wrong contest/election | Rejected. |
+| Verifier | Can change verification/assignment but cannot self-grant administrator role. |
+| Auditor | Can read audit events but cannot alter elections or ballots. |
+| Result consumer | Sees released aggregates only; no assignment/voter/candidate linkage. |
 
-- **Verification workflow:** set `profiles.verification_status = 'verified'` only in a protected authority process (for example an audited server-side workflow using a service role held outside the client). Do not let users upload or self-approve an ID without robust review.
-- **Admin/RBAC:** add separate private/admin schemas and tightly reviewed role claims before building election-management UI. Never grant dashboard or service privileges to the app.
-- **Audit and monitoring:** capture privileged changes, publication schedule changes, failed RPC patterns, and abnormal auth activity in an authority-controlled audit system.
-- **Vote secrecy review:** a uniqueness record necessarily associates a user with an election in this simple architecture. Legal and cryptographic ballot-secrecy requirements may demand a stronger, independently reviewed protocol that splits eligibility from ballot storage.
-- **Rate limits / abuse controls:** configure Supabase Auth limits, password policy, CAPTCHA or equivalent where appropriate, and network/WAF controls.
-- **Backups and incident response:** encrypt backups, define access/retention policies, rehearse restore and incident procedures, and prevent operations staff from casually reading private data.
-- **Certification:** obtain independent review and jurisdictional approval before representing any action as an official ballot.
+## Operational controls outside code
+
+- Bootstrap authority roles only from a protected environment.
+- Keep service-role secrets in Supabase Edge Functions or an approved server, never Flutter.
+- Require independent review before enabling official voting.
+- Define retention/deletion policy for profiles, assignments, audit events, notifications, and backups.
+- Monitor failed auth/MFA/RPC attempts, authority changes, and suspicious assignment patterns.
+- Rehearse lost-response, deadline, outage, rollback, and support escalation scenarios.

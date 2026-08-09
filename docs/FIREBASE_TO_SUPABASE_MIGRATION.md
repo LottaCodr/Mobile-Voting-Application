@@ -15,8 +15,9 @@ Also do not blindly carry forward a historical record that links a named voter t
 | Firebase Auth account | `auth.users` | Create/invite the user through a protected admin process; issue a password-reset or account-activation flow. Password hashes do not move between providers. |
 | Firestore `voters` name/email | `public.profiles.display_name` + `auth.users.email` | Normalize names; use the `auth.users.id` as `profiles.id`. |
 | Firestore voter ID / phone | Authority-controlled verification system | Do not treat a client-entered value as verified. Keep sensitive identity evidence in a protected process outside the public API. |
-| Candidate / election metadata | `public.elections`, `public.candidates` | Validate dates, jurisdiction, candidate/election relation, ballot position, and publication flags before import. |
-| Historical count | Separate audited archive or aggregate publication | Never import it into `public.votes` without a reviewed secret-ballot design. Use aggregate result records only if publication is legally permitted. |
+| Candidate / election metadata | `public.elections`, `public.contests`, `public.candidates` | Validate dates, jurisdiction, contest/candidate relation, ballot position, MFA policy, assignment policy, and publication flags before import. |
+| Voter eligibility | `public.profiles` + `public.ballot_assignments` | Verification and election assignment are separate authority actions. Never infer an assignment from a client field. |
+| Historical count | Separate audited archive or aggregate publication | Never import voter-linked rows into legacy `public.votes` or future `public.anonymous_votes` without a reviewed secret-ballot design. Use an independently approved archive/aggregate publication path. |
 
 ## Suggested staged procedure
 

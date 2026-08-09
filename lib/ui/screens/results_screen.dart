@@ -1,40 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/app_scope.dart';
 import '../../core/app_theme.dart';
 import '../../core/formatters.dart';
 import '../../domain/models.dart';
+import '../../state/app_state.dart';
 import '../widgets/common.dart';
 
-class ResultsScreen extends StatefulWidget {
+class ResultsScreen extends ConsumerStatefulWidget {
   const ResultsScreen({super.key, this.initialElectionId});
 
   final String? initialElectionId;
 
   @override
-  State<ResultsScreen> createState() => _ResultsScreenState();
+  ConsumerState<ResultsScreen> createState() => _ResultsScreenState();
 }
 
-class _ResultsScreenState extends State<ResultsScreen> {
-  late Future<List<Election>> _elections;
-  final Map<String, Future<List<ElectionResult>>> _resultFutures =
-      <String, Future<List<ElectionResult>>>{};
+class _ResultsScreenState extends ConsumerState<ResultsScreen> {
   String? _selectedElectionId;
-
-  bool _loadedInitialData = false;
 
   @override
   void initState() {
     super.initState();
     _selectedElectionId = widget.initialElectionId;
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_loadedInitialData) return;
-    _loadedInitialData = true;
-    _elections = AppScope.of(context).services.voting.loadElections();
   }
 
   @override
@@ -46,60 +34,46 @@ class _ResultsScreenState extends State<ResultsScreen> {
     }
   }
 
-  Future<List<ElectionResult>> _resultsFor(String electionId) {
-    return _resultFutures.putIfAbsent(
-      electionId,
-      () => AppScope.of(context).services.voting.loadResults(electionId),
-    );
-  }
-
-  Future<void> _reload() async {
-    setState(() {
-      _elections = AppScope.of(context).services.voting.loadElections();
-      _resultFutures.clear();
-    });
-    await _elections;
+  Future<void> _refresh(String electionId) async {
+    ref
+      ..invalidate(electionsProvider)
+      ..invalidate(resultsProvider(electionId))
+      ..invalidate(liveResultsProvider(electionId));
+    await ref.read(resultsProvider(electionId).future);
   }
 
   @override
   Widget build(BuildContext context) {
+    final elections = ref.watch(electionsProvider);
     return Scaffold(
       body: PageFrame(
-        child: FutureBuilder<List<Election>>(
-          future: _elections,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState != ConnectionState.done) {
-              return const LoadingState(label: 'Loading published results');
-            }
-            if (snapshot.hasError) {
-              return InlineError(
-                message: 'We could not load the election results list. Please try again.',
-                onRetry: _reload,
-              );
-            }
-            final elections = snapshot.data ?? const <Election>[];
-            if (elections.isEmpty) {
+        child: elections.when(
+          loading: () => const LoadingState(label: 'Loading published results'),
+          error: (_, __) => InlineError(
+            message: 'We could not load the assigned election results list.',
+            onRetry: () => ref.invalidate(electionsProvider),
+          ),
+          data: (items) {
+            if (items.isEmpty) {
               return const EmptyState(
                 icon: Icons.bar_chart_outlined,
-                title: 'No results available',
-                description:
-                    'Published results will appear here once an election is ready to share them.',
+                title: 'No assigned election results',
+                description: 'Published results for your assigned elections will appear here.',
               );
             }
-            final election = _findElection(elections);
+            final election = _findElection(items);
             if (election == null) {
               return const EmptyState(
                 icon: Icons.error_outline_rounded,
                 title: 'This result is unavailable',
-                description: 'Choose an election from your dashboard.',
+                description: 'Choose another assigned election from your dashboard.',
               );
             }
             return _ResultsBody(
               election: election,
-              elections: elections,
-              resultsFuture: _resultsFor(election.id),
+              elections: items,
               onElectionChanged: (id) => setState(() => _selectedElectionId = id),
-              onReload: _reload,
+              onRefresh: () => _refresh(election.id),
             );
           },
         ),
@@ -124,30 +98,28 @@ class _ResultsScreenState extends State<ResultsScreen> {
   }
 }
 
-class _ResultsBody extends StatelessWidget {
+class _ResultsBody extends ConsumerWidget {
   const _ResultsBody({
     required this.election,
     required this.elections,
-    required this.resultsFuture,
     required this.onElectionChanged,
-    required this.onReload,
+    required this.onRefresh,
   });
 
   final Election election;
   final List<Election> elections;
-  final Future<List<ElectionResult>> resultsFuture;
   final ValueChanged<String> onElectionChanged;
-  final Future<void> Function() onReload;
+  final Future<void> Function() onRefresh;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (!election.resultsVisible) {
       return ListView(
-        children: [
+        children: <Widget>[
           const SizedBox(height: 8),
           const SectionHeading(
             title: 'Results',
-            subtitle: 'Choose an election to see published, aggregate results.',
+            subtitle: 'The authority controls when aggregate counts are released.',
           ),
           const SizedBox(height: 18),
           _ResultElectionPicker(
@@ -160,72 +132,71 @@ class _ResultsBody extends StatelessWidget {
             icon: Icons.lock_clock_outlined,
             title: 'Results are not published yet',
             description:
-                'This election is still pending or has not been opened for public results. Check back after the official release.',
+                'Check back after the authority releases aggregate results for this election.',
           ),
         ],
       );
     }
 
-    return FutureBuilder<List<ElectionResult>>(
-      future: resultsFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return const LoadingState(label: 'Loading aggregate election results');
-        }
-        if (snapshot.hasError) {
-          return InlineError(
-            message: 'Published results are unavailable right now. Please try again.',
-            onRetry: () => onReload(),
-          );
-        }
-        final results = snapshot.data ?? const <ElectionResult>[];
-        final totalVotes = results.isEmpty ? 0 : results.first.totalVotes;
-        final leading = results.isEmpty ? null : results.first;
-        return RefreshIndicator(
-          onRefresh: onReload,
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            children: [
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  const Expanded(
-                    child: SectionHeading(
-                      title: 'Results',
-                      subtitle: 'Aggregate counts only. Individual ballot choices remain private.',
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: 'Refresh results',
-                    onPressed: onReload,
-                    icon: const Icon(Icons.refresh_rounded),
-                  ),
-                ],
+    final streamed = ref.watch(liveResultsProvider(election.id));
+    final fallback = ref.watch(resultsProvider(election.id));
+    final results = streamed.valueOrNull ?? fallback.valueOrNull;
+    if (results == null && (streamed.isLoading || fallback.isLoading)) {
+      return const LoadingState(label: 'Loading aggregate election results');
+    }
+    if (results == null) {
+      return InlineError(
+        message: 'Published results are unavailable right now. Please try again.',
+        onRetry: () => onRefresh(),
+      );
+    }
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: <Widget>[
+          const SizedBox(height: 8),
+          Row(
+            children: <Widget>[
+              const Expanded(
+                child: SectionHeading(
+                  title: 'Results',
+                  subtitle: 'Aggregate counts only. Individual ballot choices remain private.',
+                ),
               ),
-              const SizedBox(height: 18),
-              _ResultElectionPicker(
-                elections: elections,
-                election: election,
-                onChanged: onElectionChanged,
+              IconButton(
+                tooltip: 'Refresh results',
+                onPressed: () => onRefresh(),
+                icon: const Icon(Icons.refresh_rounded),
               ),
-              const SizedBox(height: 16),
-              _ResultsSummary(election: election, totalVotes: totalVotes, leader: leading),
-              const SizedBox(height: 26),
-              SectionHeading(
-                title: election.status == ElectionStatus.live ? 'Current count' : 'Final count',
-                subtitle: results.isEmpty
-                    ? 'No aggregate votes have been published.'
-                    : '${formatCompactNumber(totalVotes)} votes reported',
-              ),
-              const SizedBox(height: 14),
-              if (results.isEmpty)
-                const EmptyState(
-                  icon: Icons.bar_chart_outlined,
-                  title: 'No results reported',
-                  description: 'Aggregate result rows will appear when they are published.',
-                )
-              else
-                ...results.map(
+            ],
+          ),
+          const SizedBox(height: 18),
+          _ResultElectionPicker(
+            elections: elections,
+            election: election,
+            onChanged: onElectionChanged,
+          ),
+          const SizedBox(height: 16),
+          _ResultsSummary(election: election, results: results),
+          const SizedBox(height: 26),
+          if (results.isEmpty)
+            const EmptyState(
+              icon: Icons.bar_chart_outlined,
+              title: 'No results reported',
+              description: 'Aggregate result rows will appear when the authority publishes them.',
+            )
+          else
+            ..._groupResults(results).entries.expand(
+              (entry) => <Widget>[
+                SectionHeading(
+                  title: entry.key,
+                  subtitle: election.status == ElectionStatus.live
+                      ? 'Current aggregate count'
+                      : 'Final published count',
+                ),
+                const SizedBox(height: 12),
+                ...entry.value.map(
                   (result) => Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: _ResultCard(
@@ -234,12 +205,21 @@ class _ResultsBody extends StatelessWidget {
                     ),
                   ),
                 ),
-              const SizedBox(height: 20),
-            ],
-          ),
-        );
-      },
+                const SizedBox(height: 16),
+              ],
+            ),
+          const SizedBox(height: 20),
+        ],
+      ),
     );
+  }
+
+  Map<String, List<ElectionResult>> _groupResults(List<ElectionResult> results) {
+    final groups = <String, List<ElectionResult>>{};
+    for (final result in results) {
+      groups.putIfAbsent(result.contestTitle, () => <ElectionResult>[]).add(result);
+    }
+    return groups;
   }
 }
 
@@ -260,12 +240,12 @@ class _ResultElectionPicker extends StatelessWidget {
       value: election.id,
       isExpanded: true,
       decoration: const InputDecoration(
-        labelText: 'Election',
+        labelText: 'Assigned election',
         prefixIcon: Icon(Icons.account_balance_outlined),
       ),
-      items: [
+      items: <DropdownMenuItem<String>>[
         for (final item in elections)
-          DropdownMenuItem(
+          DropdownMenuItem<String>(
             value: item.id,
             child: Text(item.title, overflow: TextOverflow.ellipsis),
           ),
@@ -278,23 +258,24 @@ class _ResultElectionPicker extends StatelessWidget {
 }
 
 class _ResultsSummary extends StatelessWidget {
-  const _ResultsSummary({required this.election, required this.totalVotes, required this.leader});
+  const _ResultsSummary({required this.election, required this.results});
 
   final Election election;
-  final int totalVotes;
-  final ElectionResult? leader;
+  final List<ElectionResult> results;
 
   @override
   Widget build(BuildContext context) {
+    final totalVotes = results.fold<int>(0, (sum, result) => sum + result.votes);
+    final contestCount = results.map((result) => result.contestId).toSet().length;
     final live = election.status == ElectionStatus.live;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(color: AppColors.navy, borderRadius: BorderRadius.circular(22)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+        children: <Widget>[
           Row(
-            children: [
+            children: <Widget>[
               Icon(
                 live ? Icons.sensors_rounded : Icons.check_circle_rounded,
                 color: const Color(0xFF8DE0D3),
@@ -321,23 +302,18 @@ class _ResultsSummary extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Row(
-            children: [
-              _SummaryNumber(value: formatCompactNumber(totalVotes), label: 'Votes reported'),
+            children: <Widget>[
+              _SummaryNumber(value: formatCompactNumber(totalVotes), label: 'Aggregate choices'),
               const SizedBox(width: 28),
-              Expanded(
-                child: Text(
-                  leader == null
-                      ? 'Waiting for the first published count.'
-                      : '${leader!.fullName} is currently ranked first at ${(leader!.percentage * 100).toStringAsFixed(1)}%.',
-                  style: const TextStyle(color: Color(0xFFDDE9F8), height: 1.45),
-                ),
-              ),
+              _SummaryNumber(value: '$contestCount', label: 'Contests'),
             ],
           ),
           const SizedBox(height: 12),
           Text(
-            live ? 'Counts can change while voting remains open.' : 'This election has closed.',
-            style: const TextStyle(color: Color(0xFFB9CAE0), fontSize: 12),
+            live
+                ? 'Counts can change while voting remains open. Refresh and live updates use aggregate data only.'
+                : 'This election has closed. The authority has published these aggregate results.',
+            style: const TextStyle(color: Color(0xFFB9CAE0), fontSize: 12, height: 1.4),
           ),
         ],
       ),
@@ -355,7 +331,7 @@ class _SummaryNumber extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+      children: <Widget>[
         Text(
           value,
           style: Theme.of(
@@ -391,20 +367,15 @@ class _ResultCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+          children: <Widget>[
             Row(
-              children: [
-                InitialAvatar(
-                  initials: _initials(result.fullName),
-                  color: color,
-                  size: 44,
-                  semanticLabel: '${result.fullName} initials',
-                ),
+              children: <Widget>[
+                InitialAvatar(initials: _initials(result.fullName), color: color, size: 44),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+                    children: <Widget>[
                       Text(
                         result.fullName,
                         style: const TextStyle(color: AppColors.navy, fontWeight: FontWeight.w800),
@@ -437,7 +408,7 @@ class _ResultCard extends StatelessWidget {
             const SizedBox(height: 16),
             Semantics(
               label:
-                  '${(percent * 100).toStringAsFixed(1)} percent, ${formatCompactNumber(result.votes)} votes',
+                  '${(percent * 100).toStringAsFixed(1)} percent, ${formatCompactNumber(result.votes)} aggregate choices',
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(99),
                 child: LinearProgressIndicator(
@@ -451,13 +422,13 @@ class _ResultCard extends StatelessWidget {
             const SizedBox(height: 9),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
+              children: <Widget>[
                 Text(
                   '${(percent * 100).toStringAsFixed(1)}%',
                   style: const TextStyle(color: AppColors.navy, fontWeight: FontWeight.w800),
                 ),
                 Text(
-                  '${formatCompactNumber(result.votes)} ${isLive ? 'votes so far' : 'votes'}',
+                  '${formatCompactNumber(result.votes)} ${isLive ? 'choices so far' : 'choices'}',
                   style: const TextStyle(color: AppColors.inkMuted, fontWeight: FontWeight.w600),
                 ),
               ],

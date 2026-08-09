@@ -17,92 +17,104 @@ abstract final class AppColors {
   static const surface = Colors.white;
 }
 
-ThemeData buildAppTheme() {
+ThemeData buildAppTheme() => _buildTheme(Brightness.light);
+
+ThemeData buildDarkAppTheme() => _buildTheme(Brightness.dark);
+
+ThemeData _buildTheme(Brightness brightness) {
+  final isDark = brightness == Brightness.dark;
   final colorScheme = ColorScheme.fromSeed(
     seedColor: AppColors.blue,
-    brightness: Brightness.light,
-    primary: AppColors.blue,
-    onPrimary: Colors.white,
-    secondary: AppColors.teal,
-    onSecondary: Colors.white,
-    surface: AppColors.surface,
-    onSurface: AppColors.navy,
-    error: AppColors.red,
-    onError: Colors.white,
+    brightness: brightness,
+    primary: isDark ? const Color(0xFF9FC3FF) : AppColors.blue,
+    onPrimary: isDark ? const Color(0xFF002C63) : Colors.white,
+    secondary: isDark ? const Color(0xFF6FE1CF) : AppColors.teal,
+    onSecondary: isDark ? const Color(0xFF003F36) : Colors.white,
+    surface: isDark ? const Color(0xFF132235) : AppColors.surface,
+    onSurface: isDark ? const Color(0xFFF1F6FC) : AppColors.navy,
+    error: isDark ? const Color(0xFFFFB4AB) : AppColors.red,
+    onError: isDark ? const Color(0xFF690005) : Colors.white,
   );
+  final canvas = isDark ? const Color(0xFF0B1726) : AppColors.canvas;
+  final border = isDark ? const Color(0xFF31455B) : AppColors.border;
+  final muted = isDark ? const Color(0xFFB4C6DB) : AppColors.inkMuted;
+  final card = isDark ? const Color(0xFF132235) : Colors.white;
 
   final base = ThemeData(useMaterial3: true, colorScheme: colorScheme, fontFamily: 'Montserrat');
 
   return base.copyWith(
-    scaffoldBackgroundColor: AppColors.canvas,
+    scaffoldBackgroundColor: canvas,
     splashFactory: InkSparkle.splashFactory,
     visualDensity: VisualDensity.standard,
-    appBarTheme: const AppBarTheme(
+    appBarTheme: AppBarTheme(
       backgroundColor: Colors.transparent,
-      foregroundColor: AppColors.navy,
+      foregroundColor: colorScheme.onSurface,
       elevation: 0,
       centerTitle: false,
       surfaceTintColor: Colors.transparent,
     ),
     cardTheme: CardThemeData(
-      color: Colors.white,
+      color: card,
       elevation: 0,
       margin: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: const BorderSide(color: AppColors.border),
+        side: BorderSide(color: border),
       ),
     ),
-    dividerTheme: const DividerThemeData(color: AppColors.border, space: 1, thickness: 1),
+    dividerTheme: DividerThemeData(color: border, space: 1, thickness: 1),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: Colors.white,
+      fillColor: card,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: AppColors.border),
+        borderSide: BorderSide(color: border),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: AppColors.border),
+        borderSide: BorderSide(color: border),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: AppColors.blue, width: 2),
+        borderSide: BorderSide(color: colorScheme.primary, width: 2),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: AppColors.red),
+        borderSide: BorderSide(color: colorScheme.error),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: AppColors.red, width: 2),
+        borderSide: BorderSide(color: colorScheme.error, width: 2),
       ),
-      labelStyle: const TextStyle(color: AppColors.inkMuted),
-      hintStyle: const TextStyle(color: AppColors.inkMuted),
+      labelStyle: TextStyle(color: muted),
+      hintStyle: TextStyle(color: muted),
     ),
     navigationBarTheme: NavigationBarThemeData(
       height: 76,
-      backgroundColor: Colors.white,
-      indicatorColor: AppColors.bluePale,
+      backgroundColor: card,
+      indicatorColor: isDark ? const Color(0xFF1D416C) : AppColors.bluePale,
       labelTextStyle: WidgetStateProperty.resolveWith((states) {
         return TextStyle(
-          color: states.contains(WidgetState.selected) ? AppColors.blueDark : AppColors.inkMuted,
+          color: states.contains(WidgetState.selected) ? colorScheme.primary : muted,
           fontWeight: states.contains(WidgetState.selected) ? FontWeight.w700 : FontWeight.w600,
           fontSize: 12,
         );
       }),
       iconTheme: WidgetStateProperty.resolveWith((states) {
         return IconThemeData(
-          color: states.contains(WidgetState.selected) ? AppColors.blueDark : AppColors.inkMuted,
+          color: states.contains(WidgetState.selected) ? colorScheme.primary : muted,
         );
       }),
     ),
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
-      backgroundColor: AppColors.navy,
-      contentTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+      backgroundColor: isDark ? const Color(0xFFEAF2FF) : AppColors.navy,
+      contentTextStyle: TextStyle(
+        color: isDark ? AppColors.navy : Colors.white,
+        fontWeight: FontWeight.w500,
+      ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
     ),
     filledButtonTheme: FilledButtonThemeData(
@@ -117,7 +129,7 @@ ThemeData buildAppTheme() {
       style: OutlinedButton.styleFrom(
         minimumSize: const Size.fromHeight(52),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-        side: const BorderSide(color: AppColors.border),
+        side: BorderSide(color: border),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
       ),
@@ -125,7 +137,7 @@ ThemeData buildAppTheme() {
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
         minimumSize: const Size(48, 48),
-        foregroundColor: AppColors.blueDark,
+        foregroundColor: colorScheme.primary,
         textStyle: const TextStyle(fontWeight: FontWeight.w700),
       ),
     ),

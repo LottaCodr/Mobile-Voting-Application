@@ -1,43 +1,32 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
 
-import '../../core/app_scope.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../core/app_theme.dart';
 import '../../core/formatters.dart';
 import '../../data/voting_repository.dart';
 import '../../domain/models.dart';
+import '../../state/app_state.dart';
 import '../widgets/common.dart';
 
-class BallotScreen extends StatefulWidget {
+class BallotScreen extends ConsumerStatefulWidget {
   const BallotScreen({super.key, this.initialElectionId});
 
   final String? initialElectionId;
 
   @override
-  State<BallotScreen> createState() => _BallotScreenState();
+  ConsumerState<BallotScreen> createState() => _BallotScreenState();
 }
 
-class _BallotScreenState extends State<BallotScreen> {
-  late Future<List<Election>> _elections;
-  final Map<String, Future<List<Candidate>>> _candidateFutures =
-      <String, Future<List<Candidate>>>{};
+class _BallotScreenState extends ConsumerState<BallotScreen> {
   String? _selectedElectionId;
-  String? _selectedCandidateId;
   String _query = '';
-
-  bool _loadedInitialData = false;
 
   @override
   void initState() {
     super.initState();
     _selectedElectionId = widget.initialElectionId;
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_loadedInitialData) return;
-    _loadedInitialData = true;
-    _elections = AppScope.of(context).services.voting.loadElections();
   }
 
   @override
@@ -47,54 +36,45 @@ class _BallotScreenState extends State<BallotScreen> {
         widget.initialElectionId != oldWidget.initialElectionId) {
       setState(() {
         _selectedElectionId = widget.initialElectionId;
-        _selectedCandidateId = null;
         _query = '';
       });
     }
   }
 
-  Future<List<Candidate>> _candidatesFor(String electionId) {
-    return _candidateFutures.putIfAbsent(
-      electionId,
-      () => AppScope.of(context).services.voting.loadCandidates(electionId),
-    );
-  }
-
-  Future<void> _reload() async {
-    setState(() {
-      _elections = AppScope.of(context).services.voting.loadElections();
-      _candidateFutures.clear();
-    });
-    await _elections;
+  Future<void> _refresh(String electionId) async {
+    ref
+      ..invalidate(electionsProvider)
+      ..invalidate(contestsProvider(electionId))
+      ..invalidate(candidatesProvider(electionId))
+      ..invalidate(ballotStatusProvider(electionId));
+    await Future.wait<void>(<Future<void>>[
+      ref.read(electionsProvider.future).then<void>((_) {}),
+      ref.read(contestsProvider(electionId).future).then<void>((_) {}),
+    ]);
   }
 
   @override
   Widget build(BuildContext context) {
+    final elections = ref.watch(electionsProvider);
     return Scaffold(
       body: PageFrame(
-        child: FutureBuilder<List<Election>>(
-          future: _elections,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState != ConnectionState.done) {
-              return const LoadingState(label: 'Loading ballot choices');
-            }
-            if (snapshot.hasError) {
-              return InlineError(
-                message: 'We could not load the ballot list. Check your connection and try again.',
-                onRetry: _reload,
-              );
-            }
-            final elections = snapshot.data ?? const <Election>[];
-            if (elections.isEmpty) {
+        child: elections.when(
+          loading: () => const LoadingState(label: 'Loading your assigned ballots'),
+          error: (_, __) => InlineError(
+            message: 'We could not load your ballot list. Check your connection and try again.',
+            onRetry: () => ref.invalidate(electionsProvider),
+          ),
+          data: (items) {
+            if (items.isEmpty) {
               return const EmptyState(
-                icon: Icons.how_to_vote_outlined,
-                title: 'No ballots are available',
+                icon: Icons.assignment_ind_outlined,
+                title: 'No ballot is assigned',
                 description:
-                    'Published ballots will appear here when you are eligible to review them.',
+                    'An authority-issued ballot will appear here after your profile is verified and assigned.',
               );
             }
-            final selectedElection = _findElection(elections);
-            if (selectedElection == null) {
+            final election = _findElection(items);
+            if (election == null) {
               return const EmptyState(
                 icon: Icons.error_outline_rounded,
                 title: 'This ballot is unavailable',
@@ -102,20 +82,15 @@ class _BallotScreenState extends State<BallotScreen> {
               );
             }
             return _BallotBody(
-              election: selectedElection,
-              elections: elections,
-              candidatesFuture: _candidatesFor(selectedElection.id),
-              selectedCandidateId: _selectedCandidateId,
+              election: election,
+              elections: items,
               query: _query,
               onElectionChanged: (id) => setState(() {
                 _selectedElectionId = id;
-                _selectedCandidateId = null;
                 _query = '';
               }),
-              onCandidateChanged: (id) => setState(() => _selectedCandidateId = id),
               onQueryChanged: (value) => setState(() => _query = value),
-              onReload: _reload,
-              onReview: _reviewVote,
+              onRefresh: () => _refresh(election.id),
             );
           },
         ),
@@ -131,192 +106,243 @@ class _BallotScreenState extends State<BallotScreen> {
       }
     }
     for (final election in elections) {
-      if (election.status == ElectionStatus.live) return election;
+      if (election.status == ElectionStatus.live && !election.hasSubmitted) return election;
     }
     return elections.first;
   }
-
-  Future<void> _reviewVote(Election election, Candidate candidate) async {
-    final controller = AppScope.of(context);
-    final profile = controller.profile;
-    if (!controller.isDemo && profile?.isVerified != true) {
-      _showMessage('Your voter verification must be completed before a ballot can be submitted.');
-      return;
-    }
-
-    final confirmed = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      builder: (context) => _VoteConfirmationSheet(
-        election: election,
-        candidate: candidate,
-        isDemo: controller.isDemo,
-      ),
-    );
-    if (confirmed != true || !mounted) return;
-
-    try {
-      final receipt = await controller.services.voting.castVote(
-        electionId: election.id,
-        candidateId: candidate.id,
-      );
-      if (!mounted) return;
-      setState(() => _selectedCandidateId = null);
-      await showModalBottomSheet<void>(
-        context: context,
-        useSafeArea: true,
-        builder: (context) =>
-            _VoteReceiptSheet(election: election, receipt: receipt, isDemo: controller.isDemo),
-      );
-    } on RepositoryFailure catch (error) {
-      if (mounted) _showMessage(error.message);
-    } catch (_) {
-      if (mounted) _showMessage('Your selection could not be submitted. Please try again.');
-    }
-  }
-
-  void _showMessage(String message) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
-  }
 }
 
-class _BallotBody extends StatelessWidget {
+class _BallotBody extends ConsumerWidget {
   const _BallotBody({
     required this.election,
     required this.elections,
-    required this.candidatesFuture,
-    required this.selectedCandidateId,
     required this.query,
     required this.onElectionChanged,
-    required this.onCandidateChanged,
     required this.onQueryChanged,
-    required this.onReload,
-    required this.onReview,
+    required this.onRefresh,
   });
 
   final Election election;
   final List<Election> elections;
-  final Future<List<Candidate>> candidatesFuture;
-  final String? selectedCandidateId;
   final String query;
   final ValueChanged<String> onElectionChanged;
-  final ValueChanged<String> onCandidateChanged;
   final ValueChanged<String> onQueryChanged;
-  final Future<void> Function() onReload;
-  final Future<void> Function(Election election, Candidate candidate) onReview;
+  final Future<void> Function() onRefresh;
 
   @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<List<Candidate>>(
-      future: candidatesFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return const LoadingState(label: 'Loading candidates');
-        }
-        if (snapshot.hasError) {
-          return InlineError(
-            message: 'Candidate information is unavailable right now.',
-            onRetry: () => onReload(),
-          );
-        }
-        final candidates = snapshot.data ?? const <Candidate>[];
-        final filtered = candidates.where((candidate) {
-          final needle = query.trim().toLowerCase();
-          return needle.isEmpty ||
-              candidate.fullName.toLowerCase().contains(needle) ||
-              candidate.partyName.toLowerCase().contains(needle) ||
-              candidate.partyAbbreviation.toLowerCase().contains(needle);
-        }).toList();
-        final selected = candidates
-            .where((candidate) => candidate.id == selectedCandidateId)
-            .firstOrNull;
-        final canSubmit = election.status == ElectionStatus.live && selected != null;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final contests = ref.watch(contestsProvider(election.id));
+    final candidates = ref.watch(candidatesProvider(election.id));
+    final submission = ref.watch(ballotStatusProvider(election.id));
+    final session = ref.watch(sessionProvider);
+    final draft = ref.watch(ballotDraftProvider);
+    final choices = draft.electionId == election.id ? draft.choices : const <String, String>{};
 
-        return Column(
-          children: [
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: onReload,
-                child: ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  children: [
-                    const SizedBox(height: 8),
-                    Text(
-                      'Your ballot',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: AppColors.navy,
-                        fontWeight: FontWeight.w800,
-                      ),
+    if (contests.isLoading || candidates.isLoading || submission.isLoading) {
+      return const LoadingState(label: 'Loading ballot contests and choices');
+    }
+    if (contests.hasError || candidates.hasError || submission.hasError) {
+      return InlineError(
+        message: 'Candidate or ballot-status information is unavailable right now.',
+        onRetry: () => onRefresh(),
+      );
+    }
+
+    final contestList = contests.value ?? const <BallotContest>[];
+    final candidateList = candidates.value ?? const <Candidate>[];
+    final status =
+        submission.value ??
+        BallotSubmissionStatus(
+          electionId: election.id,
+          state: election.submissionState,
+          requiresMfa: election.requiresMfa,
+        );
+    final requiredContests = contestList.where((contest) => contest.required).toList();
+    final allRequiredSelected = requiredContests.every(
+      (contest) => choices.containsKey(contest.id),
+    );
+    final needsMfa = status.requiresMfa && !(session.mfaStatus?.isElevated ?? false);
+    final canReview =
+        election.isOpen &&
+        status.state == SubmissionState.eligible &&
+        session.profile?.isVerified == true &&
+        !needsMfa &&
+        allRequiredSelected;
+
+    return Column(
+      children: <Widget>[
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: onRefresh,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: <Widget>[
+                const SizedBox(height: 8),
+                Text(
+                  'Your ballot',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    color: AppColors.navy,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Review every contest. Your selections stay on this screen until you explicitly confirm submission.',
+                  style: TextStyle(color: AppColors.inkMuted, height: 1.45),
+                ),
+                const SizedBox(height: 18),
+                _ElectionPicker(
+                  elections: elections,
+                  selectedElection: election,
+                  onChanged: onElectionChanged,
+                ),
+                const SizedBox(height: 14),
+                _BallotStatusCard(
+                  election: election,
+                  status: status,
+                  needsMfa: needsMfa,
+                  verified: session.profile?.isVerified == true,
+                ),
+                if (status.hasSubmitted) ...<Widget>[
+                  const SizedBox(height: 26),
+                  _SubmittedBallotCard(status: status),
+                  const SizedBox(height: 24),
+                ] else ...<Widget>[
+                  const SizedBox(height: 24),
+                  _ProgressHeader(
+                    requiredCount: requiredContests.length,
+                    completedCount: choices.keys
+                        .where(requiredContests.map((c) => c.id).contains)
+                        .length,
+                  ),
+                  const SizedBox(height: 14),
+                  TextField(
+                    onChanged: onQueryChanged,
+                    textInputAction: TextInputAction.search,
+                    decoration: const InputDecoration(
+                      hintText: 'Search a candidate or party',
+                      prefixIcon: Icon(Icons.search_rounded),
                     ),
-                    const SizedBox(height: 6),
-                    const Text(
-                      'Take your time. Your choice is not submitted until you confirm it.',
-                      style: TextStyle(color: AppColors.inkMuted, height: 1.45),
-                    ),
-                    const SizedBox(height: 18),
-                    _ElectionPicker(
-                      elections: elections,
-                      selectedElection: election,
-                      onChanged: onElectionChanged,
-                    ),
-                    const SizedBox(height: 14),
-                    _BallotNotice(election: election),
-                    const SizedBox(height: 24),
-                    SectionHeading(
-                      title: 'Choose one candidate',
-                      subtitle: election.status == ElectionStatus.live
-                          ? 'Tap a candidate to select them. You can change your mind before confirmation.'
-                          : election.status == ElectionStatus.upcoming
-                          ? 'This ballot is not open yet. You can still review the candidates.'
-                          : 'This ballot has closed. Candidate information remains available for reference.',
-                    ),
-                    const SizedBox(height: 14),
-                    TextField(
-                      onChanged: onQueryChanged,
-                      textInputAction: TextInputAction.search,
-                      decoration: const InputDecoration(
-                        hintText: 'Search candidate or party',
-                        prefixIcon: Icon(Icons.search_rounded),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    if (filtered.isEmpty)
-                      const EmptyState(
-                        icon: Icons.search_off_rounded,
-                        title: 'No candidates found',
-                        description: 'Try a different name or party.',
-                      )
-                    else
-                      ...filtered.map(
-                        (candidate) => Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: _CandidateChoiceCard(
-                            candidate: candidate,
-                            selected: candidate.id == selectedCandidateId,
-                            enabled: election.status == ElectionStatus.live,
-                            onSelected: () => onCandidateChanged(candidate.id),
-                          ),
+                  ),
+                  const SizedBox(height: 20),
+                  if (contestList.isEmpty)
+                    const EmptyState(
+                      icon: Icons.ballot_outlined,
+                      title: 'No contests are published',
+                      description: 'Contact the election authority if you expected a ballot.',
+                    )
+                  else
+                    ...contestList.map(
+                      (contest) => Padding(
+                        padding: const EdgeInsets.only(bottom: 22),
+                        child: _ContestSection(
+                          contest: contest,
+                          candidates: _filteredForContest(candidateList, contest.id, query),
+                          selectedCandidateId: choices[contest.id],
+                          enabled: election.isOpen && status.state == SubmissionState.eligible,
+                          electionId: election.id,
                         ),
                       ),
-                    const SizedBox(height: 18),
-                  ],
-                ),
+                    ),
+                  const SizedBox(height: 20),
+                ],
+              ],
+            ),
+          ),
+        ),
+        if (!status.hasSubmitted)
+          _BallotBottomAction(
+            canReview: canReview,
+            hasAnySelection: choices.isNotEmpty,
+            needsMfa: needsMfa,
+            verified: session.profile?.isVerified == true,
+            electionOpen: election.isOpen,
+            onReview: () => unawaited(
+              _reviewAndSubmit(
+                context: context,
+                ref: ref,
+                election: election,
+                contests: contestList,
+                candidates: candidateList,
+                choices: choices,
               ),
             ),
-            _BallotBottomAction(
-              selected: selected,
-              canSubmit: canSubmit,
-              onReview: () {
-                if (selected != null) onReview(election, selected);
-              },
-            ),
-          ],
-        );
-      },
+          ),
+      ],
     );
+  }
+
+  List<Candidate> _filteredForContest(List<Candidate> candidates, String contestId, String query) {
+    final needle = query.trim().toLowerCase();
+    return candidates.where((candidate) {
+      if (candidate.contestId != contestId) return false;
+      return needle.isEmpty ||
+          candidate.fullName.toLowerCase().contains(needle) ||
+          candidate.partyName.toLowerCase().contains(needle) ||
+          candidate.partyAbbreviation.toLowerCase().contains(needle);
+    }).toList();
+  }
+
+  Future<void> _reviewAndSubmit({
+    required BuildContext context,
+    required WidgetRef ref,
+    required Election election,
+    required List<BallotContest> contests,
+    required List<Candidate> candidates,
+    required Map<String, String> choices,
+  }) async {
+    final selected = <BallotContest, Candidate>{};
+    for (final contest in contests) {
+      final candidateId = choices[contest.id];
+      if (candidateId == null) continue;
+      final candidate = candidates.where((item) => item.id == candidateId).firstOrNull;
+      if (candidate != null) selected[contest] = candidate;
+    }
+    final confirmed = await showModalBottomSheet<bool>(
+      context: context,
+      useSafeArea: true,
+      isScrollControlled: true,
+      builder: (context) => _BallotConfirmationSheet(election: election, selections: selected),
+    );
+    if (confirmed != true || !context.mounted) return;
+
+    try {
+      final receipt = await ref
+          .read(votingRepositoryProvider)
+          .submitBallot(
+            electionId: election.id,
+            choices: selected.entries
+                .map((entry) => BallotChoice(contestId: entry.key.id, candidateId: entry.value.id))
+                .toList(),
+          );
+      ref
+        ..read(ballotDraftProvider.notifier).clear(election.id)
+        ..invalidate(ballotStatusProvider(election.id))
+        ..invalidate(electionsProvider)
+        ..invalidate(resultsProvider(election.id))
+        ..invalidate(liveResultsProvider(election.id));
+      if (!context.mounted) return;
+      await showModalBottomSheet<void>(
+        context: context,
+        useSafeArea: true,
+        builder: (context) => _VoteReceiptSheet(election: election, receipt: receipt),
+      );
+    } on RepositoryFailure catch (error) {
+      if (context.mounted) _showMessage(context, error.message);
+    } catch (_) {
+      if (context.mounted) {
+        _showMessage(
+          context,
+          'Your ballot could not be submitted. Check your safe ballot status before trying again.',
+        );
+      }
+    }
+  }
+
+  void _showMessage(BuildContext context, String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 }
 
@@ -337,10 +363,10 @@ class _ElectionPicker extends StatelessWidget {
       value: selectedElection.id,
       isExpanded: true,
       decoration: const InputDecoration(
-        labelText: 'Election',
+        labelText: 'Assigned election',
         prefixIcon: Icon(Icons.account_balance_outlined),
       ),
-      items: [
+      items: <DropdownMenuItem<String>>[
         for (final election in elections)
           DropdownMenuItem<String>(
             value: election.id,
@@ -354,41 +380,194 @@ class _ElectionPicker extends StatelessWidget {
   }
 }
 
-class _BallotNotice extends StatelessWidget {
-  const _BallotNotice({required this.election});
+class _BallotStatusCard extends StatelessWidget {
+  const _BallotStatusCard({
+    required this.election,
+    required this.status,
+    required this.needsMfa,
+    required this.verified,
+  });
 
   final Election election;
+  final BallotSubmissionStatus status;
+  final bool needsMfa;
+  final bool verified;
 
   @override
   Widget build(BuildContext context) {
-    final isLive = election.status == ElectionStatus.live;
-    final color = isLive ? AppColors.teal : AppColors.gold;
-    final background = isLive ? AppColors.tealPale : AppColors.goldPale;
-    final text = isLive
-        ? 'Voting is open until ${formatDateTime(election.endsAt)}. ${countdownLabel(election.endsAt)}.'
+    final isSubmitted = status.hasSubmitted;
+    final isOpen = election.isOpen;
+    final color = isSubmitted
+        ? AppColors.teal
+        : needsMfa || !verified
+        ? AppColors.gold
+        : isOpen
+        ? AppColors.teal
+        : AppColors.gold;
+    final background = isSubmitted || (isOpen && verified && !needsMfa)
+        ? AppColors.tealPale
+        : AppColors.goldPale;
+    final text = isSubmitted
+        ? 'Ballot submitted. Your receipt is available below and does not show your selections.'
+        : !verified
+        ? 'Your profile must be verified before this ballot can be submitted.'
+        : needsMfa
+        ? 'This election requires a verified second factor before submission.'
+        : isOpen
+        ? 'Voting is open until ${formatDateTime(election.endsAt)}.'
         : election.status == ElectionStatus.upcoming
         ? 'Voting opens ${formatDateTime(election.startsAt)}.'
         : 'Voting closed ${formatDateTime(election.endsAt)}.';
-    return Semantics(
-      liveRegion: true,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(16)),
-        child: Row(
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(16)),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Icon(
+            isSubmitted
+                ? Icons.verified_rounded
+                : needsMfa
+                ? Icons.security_rounded
+                : Icons.lock_clock_outlined,
+            color: color,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(
+                color: AppColors.navy,
+                height: 1.4,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProgressHeader extends StatelessWidget {
+  const _ProgressHeader({required this.requiredCount, required this.completedCount});
+
+  final int requiredCount;
+  final int completedCount;
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = requiredCount == 0 ? 0.0 : completedCount / requiredCount;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(isLive ? Icons.lock_clock_outlined : Icons.info_outline_rounded, color: color),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                text,
-                style: TextStyle(color: AppColors.navy, height: 1.4, fontWeight: FontWeight.w600),
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                const Icon(Icons.checklist_rounded, color: AppColors.blueDark),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '$completedCount of $requiredCount required contest${requiredCount == 1 ? '' : 's'} selected',
+                    style: const TextStyle(color: AppColors.navy, fontWeight: FontWeight.w800),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(99),
+              child: LinearProgressIndicator(
+                value: progress,
+                minHeight: 9,
+                backgroundColor: AppColors.canvas,
+                valueColor: const AlwaysStoppedAnimation<Color>(AppColors.blue),
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _ContestSection extends ConsumerWidget {
+  const _ContestSection({
+    required this.contest,
+    required this.candidates,
+    required this.selectedCandidateId,
+    required this.enabled,
+    required this.electionId,
+  });
+
+  final BallotContest contest;
+  final List<Candidate> candidates;
+  final String? selectedCandidateId;
+  final bool enabled;
+  final String electionId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    contest.title,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: AppColors.navy,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    contest.instructions,
+                    style: const TextStyle(color: AppColors.inkMuted, height: 1.4),
+                  ),
+                ],
+              ),
+            ),
+            if (contest.required)
+              const Padding(
+                padding: EdgeInsets.only(left: 10),
+                child: StatusPill(status: ElectionStatus.live),
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (candidates.isEmpty)
+          const EmptyState(
+            icon: Icons.search_off_rounded,
+            title: 'No options found',
+            description: 'Clear the search or contact the election authority.',
+          )
+        else
+          ...candidates.map(
+            (candidate) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _CandidateChoiceCard(
+                candidate: candidate,
+                selected: candidate.id == selectedCandidateId,
+                enabled: enabled,
+                onSelected: () => ref
+                    .read(ballotDraftProvider.notifier)
+                    .select(
+                      electionId: electionId,
+                      contestId: contest.id,
+                      candidateId: candidate.id,
+                    ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -430,10 +609,10 @@ class _CandidateChoiceCard extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+              children: <Widget>[
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+                  children: <Widget>[
                     InitialAvatar(
                       initials: candidate.initials,
                       color: color,
@@ -443,7 +622,7 @@ class _CandidateChoiceCard extends StatelessWidget {
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
+                        children: <Widget>[
                           Text(
                             candidate.fullName,
                             style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -459,10 +638,9 @@ class _CandidateChoiceCard extends StatelessWidget {
                         ],
                       ),
                     ),
-                    Radio<String>(
-                      value: candidate.id,
-                      groupValue: selected ? candidate.id : null,
-                      onChanged: enabled ? (_) => onSelected() : null,
+                    Icon(
+                      selected ? Icons.radio_button_checked : Icons.radio_button_off,
+                      color: color,
                     ),
                   ],
                 ),
@@ -473,11 +651,10 @@ class _CandidateChoiceCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(color: AppColors.inkMuted, height: 1.45),
                 ),
-                const SizedBox(height: 5),
                 Align(
                   alignment: Alignment.centerLeft,
                   child: TextButton.icon(
-                    onPressed: () => _showCandidateDetails(context, candidate),
+                    onPressed: () => _showCandidateDetails(context),
                     icon: const Icon(Icons.article_outlined, size: 18),
                     label: const Text('Read platform'),
                   ),
@@ -490,7 +667,7 @@ class _CandidateChoiceCard extends StatelessWidget {
     );
   }
 
-  void _showCandidateDetails(BuildContext context, Candidate candidate) {
+  void _showCandidateDetails(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
       useSafeArea: true,
@@ -499,7 +676,7 @@ class _CandidateChoiceCard extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+          children: <Widget>[
             Center(
               child: Container(
                 width: 40,
@@ -512,7 +689,7 @@ class _CandidateChoiceCard extends StatelessWidget {
             ),
             const SizedBox(height: 22),
             Row(
-              children: [
+              children: <Widget>[
                 InitialAvatar(
                   initials: candidate.initials,
                   color: colorFromHex(candidate.accentColor),
@@ -521,7 +698,7 @@ class _CandidateChoiceCard extends StatelessWidget {
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+                    children: <Widget>[
                       Text(
                         candidate.fullName,
                         style: Theme.of(
@@ -547,7 +724,6 @@ class _CandidateChoiceCard extends StatelessWidget {
               candidate.manifesto,
               style: const TextStyle(color: AppColors.inkMuted, height: 1.55),
             ),
-            const SizedBox(height: 14),
           ],
         ),
       ),
@@ -557,19 +733,34 @@ class _CandidateChoiceCard extends StatelessWidget {
 
 class _BallotBottomAction extends StatelessWidget {
   const _BallotBottomAction({
-    required this.selected,
-    required this.canSubmit,
+    required this.canReview,
+    required this.hasAnySelection,
+    required this.needsMfa,
+    required this.verified,
+    required this.electionOpen,
     required this.onReview,
   });
 
-  final Candidate? selected;
-  final bool canSubmit;
+  final bool canReview;
+  final bool hasAnySelection;
+  final bool needsMfa;
+  final bool verified;
+  final bool electionOpen;
   final VoidCallback onReview;
 
   @override
   Widget build(BuildContext context) {
+    final label = !electionOpen
+        ? 'Ballot is not open for voting'
+        : !verified
+        ? 'Verification required before voting'
+        : needsMfa
+        ? 'Complete multi-factor verification'
+        : !hasAnySelection
+        ? 'Select every required contest'
+        : 'Review your ballot';
     return Material(
-      color: AppColors.canvas,
+      color: Theme.of(context).scaffoldBackgroundColor,
       child: SafeArea(
         top: false,
         child: Container(
@@ -579,15 +770,9 @@ class _BallotBottomAction extends StatelessWidget {
             border: Border(top: BorderSide(color: AppColors.border)),
           ),
           child: FilledButton.icon(
-            onPressed: canSubmit ? onReview : null,
+            onPressed: canReview ? onReview : null,
             icon: const Icon(Icons.fact_check_outlined),
-            label: Text(
-              selected == null
-                  ? 'Select a candidate to continue'
-                  : canSubmit
-                  ? 'Review your selection'
-                  : 'Ballot is not open for voting',
-            ),
+            label: Text(label),
           ),
         ),
       ),
@@ -595,34 +780,82 @@ class _BallotBottomAction extends StatelessWidget {
   }
 }
 
-class _VoteConfirmationSheet extends StatefulWidget {
-  const _VoteConfirmationSheet({
-    required this.election,
-    required this.candidate,
-    required this.isDemo,
-  });
+class _SubmittedBallotCard extends StatelessWidget {
+  const _SubmittedBallotCard({required this.status});
 
-  final Election election;
-  final Candidate candidate;
-  final bool isDemo;
+  final BallotSubmissionStatus status;
 
   @override
-  State<_VoteConfirmationSheet> createState() => _VoteConfirmationSheetState();
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: <Widget>[
+            Container(
+              width: 56,
+              height: 56,
+              decoration: const BoxDecoration(color: AppColors.tealPale, shape: BoxShape.circle),
+              child: const Icon(Icons.check_rounded, color: AppColors.teal, size: 31),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              'Ballot submitted',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'This status intentionally does not reveal any selected candidate or option.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppColors.inkMuted, height: 1.45),
+            ),
+            if (status.receiptCode != null) ...<Widget>[
+              const SizedBox(height: 16),
+              SelectableText(
+                status.receiptCode!,
+                style: const TextStyle(
+                  color: AppColors.navy,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 18,
+                ),
+              ),
+            ],
+            if (status.submittedAt != null) ...<Widget>[
+              const SizedBox(height: 5),
+              Text(
+                formatDateTime(status.submittedAt!),
+                style: const TextStyle(color: AppColors.inkMuted, fontSize: 12),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
 }
 
-class _VoteConfirmationSheetState extends State<_VoteConfirmationSheet> {
+class _BallotConfirmationSheet extends StatefulWidget {
+  const _BallotConfirmationSheet({required this.election, required this.selections});
+
+  final Election election;
+  final Map<BallotContest, Candidate> selections;
+
+  @override
+  State<_BallotConfirmationSheet> createState() => _BallotConfirmationSheetState();
+}
+
+class _BallotConfirmationSheetState extends State<_BallotConfirmationSheet> {
   bool _acknowledged = false;
 
   @override
   Widget build(BuildContext context) {
-    final candidate = widget.candidate;
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
       child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+          children: <Widget>[
             Center(
               child: Container(
                 width: 40,
@@ -635,60 +868,55 @@ class _VoteConfirmationSheetState extends State<_VoteConfirmationSheet> {
             ),
             const SizedBox(height: 22),
             Text(
-              'Review your selection',
+              'Review your full ballot',
               style: Theme.of(
                 context,
               ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 8),
-            Text(
-              'Confirm the candidate and election below. ${widget.isDemo ? 'This is a fictional demo action.' : 'A submitted ballot cannot be changed.'}',
-              style: const TextStyle(color: AppColors.inkMuted, height: 1.5),
+            const Text(
+              'Check every contest below. A submitted ballot cannot be changed.',
+              style: TextStyle(color: AppColors.inkMuted, height: 1.5),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 18),
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.election.title,
-                      style: const TextStyle(
-                        color: AppColors.inkMuted,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const Divider(height: 24),
-                    Row(
-                      children: [
-                        InitialAvatar(
-                          initials: candidate.initials,
-                          color: colorFromHex(candidate.accentColor),
-                          size: 44,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                candidate.fullName,
-                                style: const TextStyle(
-                                  color: AppColors.navy,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                              const SizedBox(height: 3),
-                              Text(
-                                '${candidate.partyName} · ${candidate.partyAbbreviation}',
-                                style: const TextStyle(color: AppColors.inkMuted),
-                              ),
-                            ],
+                  children: <Widget>[
+                    for (final entry in widget.selections.entries) ...<Widget>[
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          entry.key.title,
+                          style: const TextStyle(
+                            color: AppColors.inkMuted,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 5),
+                      Row(
+                        children: <Widget>[
+                          InitialAvatar(
+                            initials: entry.value.initials,
+                            color: colorFromHex(entry.value.accentColor),
+                            size: 38,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              '${entry.value.fullName} · ${entry.value.partyAbbreviation}',
+                              style: const TextStyle(
+                                color: AppColors.navy,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (entry.key != widget.selections.keys.last) const Divider(height: 24),
+                    ],
                   ],
                 ),
               ),
@@ -699,24 +927,17 @@ class _VoteConfirmationSheetState extends State<_VoteConfirmationSheet> {
               onChanged: (value) => setState(() => _acknowledged = value ?? false),
               controlAffinity: ListTileControlAffinity.leading,
               contentPadding: EdgeInsets.zero,
-              title: Text(
-                widget.isDemo
-                    ? 'I understand this only records a local demo vote.'
-                    : 'I have checked my selection and understand it cannot be changed after submission.',
-                style: const TextStyle(
-                  color: AppColors.navy,
-                  height: 1.4,
-                  fontWeight: FontWeight.w600,
-                ),
+              title: const Text(
+                'I have checked every selection and understand this ballot cannot be changed after submission.',
+                style: TextStyle(color: AppColors.navy, height: 1.4, fontWeight: FontWeight.w600),
               ),
             ),
             const SizedBox(height: 14),
             FilledButton.icon(
               onPressed: _acknowledged ? () => Navigator.of(context).pop(true) : null,
               icon: const Icon(Icons.lock_rounded),
-              label: Text(widget.isDemo ? 'Record demo selection' : 'Submit secure ballot'),
+              label: const Text('Submit secure ballot'),
             ),
-            const SizedBox(height: 8),
             Center(
               child: TextButton(
                 onPressed: () => Navigator.of(context).pop(false),
@@ -731,11 +952,10 @@ class _VoteConfirmationSheetState extends State<_VoteConfirmationSheet> {
 }
 
 class _VoteReceiptSheet extends StatelessWidget {
-  const _VoteReceiptSheet({required this.election, required this.receipt, required this.isDemo});
+  const _VoteReceiptSheet({required this.election, required this.receipt});
 
   final Election election;
   final VoteReceipt receipt;
-  final bool isDemo;
 
   @override
   Widget build(BuildContext context) {
@@ -743,7 +963,7 @@ class _VoteReceiptSheet extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(24, 28, 24, 30),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        children: [
+        children: <Widget>[
           Container(
             width: 64,
             height: 64,
@@ -752,16 +972,14 @@ class _VoteReceiptSheet extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           Text(
-            isDemo ? 'Demo selection recorded' : 'Ballot submitted',
+            'Ballot submitted',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 8),
-          Text(
-            isDemo
-                ? 'You can use this screen to evaluate the confirmation experience.'
-                : 'Your ballot was accepted. This receipt confirms submission, not who you selected.',
+          const Text(
+            'Your receipt proves submission only. It does not identify any selected candidate or option.',
             textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.inkMuted, height: 1.45),
+            style: TextStyle(color: AppColors.inkMuted, height: 1.45),
           ),
           const SizedBox(height: 20),
           Container(
@@ -772,7 +990,7 @@ class _VoteReceiptSheet extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
             ),
             child: Column(
-              children: [
+              children: <Widget>[
                 const Text(
                   'SUBMISSION RECEIPT',
                   style: TextStyle(
@@ -789,7 +1007,6 @@ class _VoteReceiptSheet extends StatelessWidget {
                     color: AppColors.navy,
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
-                    letterSpacing: 0.4,
                   ),
                 ),
                 const SizedBox(height: 6),

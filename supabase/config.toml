@@ -9,3 +9,6 @@ extra_search_path = ["public", "extensions"]
 enabled = true
 site_url = "http://localhost:3000"
 additional_redirect_urls = ["http://localhost:3000"]
+
+[functions.dispatch-election-reminders]
+verify_jwt = false

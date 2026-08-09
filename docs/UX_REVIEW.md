@@ -51,6 +51,10 @@ This rebuild follows the current primary documentation rather than treating a cl
 - The app uses a bottom navigation bar on compact screens and an extended NavigationRail at desktop widths.
 - The color system uses dark navy content on white/pale surfaces and never depends only on a color indicator.
 
+## Implemented follow-on capabilities
+
+The redesign now also includes a full multi-contest ballot journey, explicit authority-assigned eligibility, a safe submitted-ballot status, receipt-safe in-app updates, MFA setup/verification, a role-aware authority workspace, result publication controls, and provider-backed retry/loading/error states. The ballot progress indicator makes missing contests visible before confirmation, while the final review sheet lists every contest without storing a selection locally after submission.
+
 ## What still needs product-owner input
 
 A production authority must determine the legal ballot language, identity proofing process, candidate imagery and accessibility text, electoral calendar, data retention period, support escalation route, and whether live results are allowed. Those choices cannot be safely inferred from a UI mockup.

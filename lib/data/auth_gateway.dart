@@ -20,6 +20,7 @@ class SignUpResult {
 abstract interface class AuthGateway {
   AppUser? get currentUser;
   Stream<AppUser?> get authStateChanges;
+  Stream<void> get passwordRecoveryEvents;
 
   Future<void> signIn({required String email, required String password});
   Future<SignUpResult> signUp({
@@ -28,6 +29,12 @@ abstract interface class AuthGateway {
     required String password,
   });
   Future<void> resetPassword(String email);
+  Future<void> updatePassword(String password);
+  Future<MfaStatus> getMfaStatus();
+  Future<List<MfaFactor>> listMfaFactors();
+  Future<MfaEnrollment> enrollTotp({required String friendlyName});
+  Future<void> verifyTotpEnrollment({required String factorId, required String code});
+  Future<void> challengeTotp({required String factorId, required String code});
   Future<void> signOut();
 }
 
@@ -52,6 +59,13 @@ class SupabaseAuthGateway implements AuthGateway {
   }
 
   @override
+  Stream<void> get passwordRecoveryEvents {
+    return _client.auth.onAuthStateChange
+        .where((state) => state.event == AuthChangeEvent.passwordRecovery)
+        .map<void>((_) {});
+  }
+
+  @override
   Future<void> signIn({required String email, required String password}) async {
     try {
       await _client.auth.signInWithPassword(email: email, password: password);
@@ -69,9 +83,11 @@ class SupabaseAuthGateway implements AuthGateway {
     required String password,
   }) async {
     try {
+      final redirect = passwordResetRedirect.trim();
       final response = await _client.auth.signUp(
         email: email,
         password: password,
+        emailRedirectTo: redirect.isEmpty ? null : redirect,
         data: <String, dynamic>{'full_name': fullName},
       );
       return SignUpResult(requiresEmailConfirmation: response.session == null);
@@ -95,6 +111,105 @@ class SupabaseAuthGateway implements AuthGateway {
       throw AuthFailure(_friendlyAuthMessage(error));
     } catch (_) {
       throw const AuthFailure('We could not send the reset email. Please try again.');
+    }
+  }
+
+  @override
+  Future<void> updatePassword(String password) async {
+    try {
+      await _client.auth.updateUser(UserAttributes(password: password));
+    } on AuthException catch (error) {
+      throw AuthFailure(_friendlyAuthMessage(error));
+    } catch (_) {
+      throw const AuthFailure('Your password could not be updated. Please try again.');
+    }
+  }
+
+  @override
+  Future<MfaStatus> getMfaStatus() async {
+    try {
+      final dynamic assurance = await _client.auth.mfa.getAuthenticatorAssuranceLevel();
+      final factors = await listMfaFactors();
+      return MfaStatus.fromValues(
+        currentLevel: assurance.currentLevel,
+        nextLevel: assurance.nextLevel,
+        hasVerifiedFactor: factors.any((factor) => factor.isVerified),
+      );
+    } on AuthException catch (error) {
+      throw AuthFailure(_friendlyAuthMessage(error));
+    } catch (_) {
+      throw const AuthFailure('Your multi-factor security status is unavailable right now.');
+    }
+  }
+
+  @override
+  Future<List<MfaFactor>> listMfaFactors() async {
+    try {
+      final dynamic factors = await _client.auth.mfa.listFactors();
+      final raw = factors.all;
+      if (raw is! Iterable) return const <MfaFactor>[];
+      return raw
+          .map<MfaFactor>((dynamic factor) {
+            return MfaFactor(
+              id: factor.id?.toString() ?? '',
+              friendlyName: factor.friendlyName?.toString() ?? 'Authenticator app',
+              status: factor.status?.toString() ?? 'unverified',
+            );
+          })
+          .where((factor) => factor.id.isNotEmpty)
+          .toList();
+    } on AuthException catch (error) {
+      throw AuthFailure(_friendlyAuthMessage(error));
+    } catch (_) {
+      throw const AuthFailure('Your authenticator methods are unavailable right now.');
+    }
+  }
+
+  @override
+  Future<MfaEnrollment> enrollTotp({required String friendlyName}) async {
+    try {
+      final dynamic enrollment = await _client.auth.mfa.enroll(
+        factorType: FactorType.totp,
+        friendlyName: friendlyName,
+      );
+      final dynamic totp = enrollment.totp;
+      final qrCode = totp?.qrCode?.toString() ?? '';
+      final secret = totp?.secret?.toString() ?? '';
+      final factorId = enrollment.id?.toString() ?? '';
+      if (factorId.isEmpty || qrCode.isEmpty || secret.isEmpty) {
+        throw const AuthFailure(
+          'The authenticator setup details were incomplete. Please try again.',
+        );
+      }
+      return MfaEnrollment(factorId: factorId, qrCode: qrCode, secret: secret);
+    } on AuthFailure {
+      rethrow;
+    } on AuthException catch (error) {
+      throw AuthFailure(_friendlyAuthMessage(error));
+    } catch (_) {
+      throw const AuthFailure('We could not start authenticator setup. Please try again.');
+    }
+  }
+
+  @override
+  Future<void> verifyTotpEnrollment({required String factorId, required String code}) async {
+    try {
+      await _client.auth.mfa.challengeAndVerify(factorId: factorId, code: code);
+    } on AuthException catch (error) {
+      throw AuthFailure(_friendlyAuthMessage(error));
+    } catch (_) {
+      throw const AuthFailure('That authenticator code could not be verified. Try a new code.');
+    }
+  }
+
+  @override
+  Future<void> challengeTotp({required String factorId, required String code}) async {
+    try {
+      await _client.auth.mfa.challengeAndVerify(factorId: factorId, code: code);
+    } on AuthException catch (error) {
+      throw AuthFailure(_friendlyAuthMessage(error));
+    } catch (_) {
+      throw const AuthFailure('That authenticator code could not be verified. Try a new code.');
     }
   }
 

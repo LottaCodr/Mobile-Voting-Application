@@ -12,7 +12,7 @@ void main() {
     await tester.tap(find.byKey(const Key('exploreDemoButton')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Your election hub'), findsOneWidget);
+    expect(find.text('Your assigned election hub'), findsOneWidget);
     expect(find.textContaining('Demo mode'), findsWidgets);
   });
 }

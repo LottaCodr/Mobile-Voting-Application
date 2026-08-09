@@ -1,95 +1,88 @@
 # CivicVote
 
-A refreshed Flutter voter portal with an accessible ballot flow and a **Supabase-first backend**. The project ships with a clearly labelled fictional demo so the interface can be evaluated before a Supabase project is connected.
+A privacy-first Flutter voter portal and Supabase backend foundation. It includes a clearly labelled fictional demo, multi-contest ballot UX, authority-assigned eligibility, MFA-aware submission, aggregate-only results, a role-aware authority workspace, notifications, audit controls, and Riverpod state management.
 
-> **Important:** This repository is a product and integration foundation, not a certified public-election system. Do not use it for a binding election until an independent security review, threat model, privacy impact assessment, accessibility audit, legal review, and the relevant jurisdiction's certification process are complete.
+> **Important:** This is an implementation foundation, not a certified public-election system. Do not use it for a binding election until the authority has completed independent security review, legal/privacy assessment, operational readiness, accessibility accommodation, and jurisdictional certification.
 
-## What changed
-
-- Replaced Firebase Auth, Firestore, Firebase configuration files, and the unused Express mock server with `supabase_flutter`.
-- Removed the unsafe client-side vote counter and password copying. Passwords now stay in Supabase Auth; the app never stores them in a profile table.
-- Added a complete Supabase migration with RLS, a profile trigger, aggregate-only results, and a transactional `cast_vote` RPC.
-- Rebuilt the interface around a clear journey: **dashboard → review ballot → explicit confirmation → privacy-preserving receipt**.
-- Added responsive NavigationRail/NavigationBar layouts, loading/empty/error states, large touch targets, semantic labels, visible verification status, readable contrast, and text-scale-friendly layouts.
-
-## Product experience
+## Included capabilities
 
 | Area | Included behavior |
 | --- | --- |
-| Home | Current election, status, deadlines, clear next action, and filterable election schedule. |
-| Ballot | Searchable candidates, full platforms, one visible selection, review sheet, acknowledgement, and post-submit receipt. |
-| Results | Aggregate-only candidate totals, rank, percentage, refresh control, and an explicit results-pending state. |
-| Profile | Verification status, masked voter reference, privacy explanation, support guidance, and safe sign-out. |
-| Demo | Fictional data and a persistent warning. A demo selection is never presented as an official vote. |
+| State | Riverpod 3 providers/notifiers for auth, profile, MFA, ballot draft, async data, live result snapshots, notifications, administrative data. |
+| Identity | Supabase Auth, email confirmation-aware sign-in, password recovery, authority-owned verification, and optional TOTP MFA. |
+| Eligibility | Election-specific `ballot_assignments`; verification alone never grants a ballot. |
+| Ballot | Multi-contest ballot, per-contest selection, search, platform sheets, progress feedback, full review, acknowledgement, and one atomic submission. |
+| Privacy | Future `anonymous_votes` contain no voter or assignment id. Submission status/receipt is separate and never reveals a choice. |
+| Results | Authority-controlled release, aggregate snapshots, contest-level ranking, manual refresh, and Supabase Realtime when enabled. |
+| Authority workspace | Role-aware verification queue, ballot assignment, election/contest/candidate management, MFA/result/publication controls, and receipt-safe audit activity. |
+| Notifications | User preferences, private in-app updates, and a server-side deadline-email Edge Function. |
+| UX | Responsive mobile/desktop navigation, semantic controls, accessible layouts, retry/loading/empty states, and fictional demo mode. |
+
+See [`docs/FEATURE_IMPLEMENTATION.md`](docs/FEATURE_IMPLEMENTATION.md) for the full matrix and the authority-owned configuration items.
 
 ## Requirements
 
-- Flutter **3.22+** / Dart **3.3+**
-- A Supabase project for authenticated production mode
-- [Supabase CLI](https://supabase.com/docs/guides/local-development/cli/getting-started) for local database development (recommended)
+- Flutter **3.29+** / Dart **3.7+**
+- A Supabase project for authenticated mode
+- [Supabase CLI](https://supabase.com/docs/guides/local-development/cli/getting-started) for local database work
+- Docker for `supabase start`
 
-## Run the UI demo
-
-No secrets are needed to explore the redesign:
+## Run the fictional UI demo
 
 ```bash
 flutter pub get
 flutter run
 ```
 
-Without Supabase build definitions, CivicVote intentionally starts at a **PRODUCT PREVIEW** screen. Choose **Explore demo ballot** to use fictional data.
+With no Supabase Dart defines, the app opens in clearly labelled **PRODUCT PREVIEW** mode. Demo data is fictional and no action is an official vote.
 
-## Connect Supabase
+## Connect a Supabase project
 
-1. Create a Supabase project and enable Email authentication.
-2. Install the CLI and apply the schema:
+```bash
+supabase start
+supabase db reset
 
-   ```bash
-   supabase start                 # local development, optional
-   supabase db reset              # applies migrations and supabase/seed.sql locally
+# For a linked hosted project
+supabase link --project-ref <project-ref>
+supabase db push
+```
 
-   # Or for a linked hosted project:
-   supabase link --project-ref <your-project-ref>
-   supabase db push
-   ```
-
-3. Copy the **Project URL** and the **publishable key** from the project's Connect panel. A publishable key is intended for clients; **never use `service_role` in Flutter**.
-4. Run with build-time values:
-
-   ```bash
-   flutter run \
-     --dart-define=SUPABASE_URL=https://your-project.supabase.co \
-     --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_replace_me
-   ```
-
-With a configured endpoint, a bootstrap failure is deliberately fail-closed: the app will not silently fall back to a device-local ballot.
-
-### Password reset deep link (optional)
-
-For mobile password reset, configure an app URL scheme and add the exact redirect URL to **Supabase Auth → URL Configuration**, then pass it at build time:
+Run Flutter using public client configuration only:
 
 ```bash
 flutter run \
   --dart-define=SUPABASE_URL=https://your-project.supabase.co \
-  --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_replace_me \
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_... \
   --dart-define=PASSWORD_RESET_REDIRECT=io.civicvote.app://reset-callback/
 ```
 
-The URL scheme must match the Android/iOS configuration of your own released app. See `supabase/.env.example`; it contains placeholders only.
+Never put a service-role key in Flutter. A configured backend fails closed rather than degrading to a local ballot.
 
-## Backend security model
+## Database architecture
 
-The implementation is in [`supabase/migrations/20260809000000_secure_voting_schema.sql`](supabase/migrations/20260809000000_secure_voting_schema.sql).
+Migrations:
 
-- `profiles` references `auth.users`; the signup trigger creates a **pending** profile.
-- A voter can read only their own profile. There is no client policy to self-mark as verified.
-- Elections and candidates are read-only to clients and must be marked public.
-- `votes` and `vote_receipts` have **no client `SELECT` or `INSERT` policy**.
-- `cast_vote(p_election_id, p_candidate_id)` runs in one database transaction, checks `auth.uid()`, verified status, live time window, candidate membership, and the unique `(election_id, voter_id)` constraint.
-- The client receives only a receipt code and timestamp. It cannot query a voter-to-candidate history.
-- `election_results` deliberately exposes aggregate counts only and only when `results_visible = true`.
+- [`20260809000000_secure_voting_schema.sql`](supabase/migrations/20260809000000_secure_voting_schema.sql) — profiles, baseline election data, RLS, initial migration path.
+- [`20260809010000_production_ballots_admin_and_notifications.sql`](supabase/migrations/20260809010000_production_ballots_admin_and_notifications.sql) — authority roles, multi-contest ballots, assignments, anonymous ballot rows, MFA policy, result snapshots, notifications, audit events, and secure RPCs.
 
-Detailed assumptions, RLS verification queries, and operational limitations are in [`docs/SECURITY_MODEL.md`](docs/SECURITY_MODEL.md). For a safe staged data/account cutover from the previous Firebase build, use [`docs/FIREBASE_TO_SUPABASE_MIGRATION.md`](docs/FIREBASE_TO_SUPABASE_MIGRATION.md).
+The production vote path is `submit_ballot(p_election_id, p_choices)`. It atomically verifies authenticated identity, AAL2 where required, profile status, election window, assignment, required contests, candidate membership, and one submission per assignment. It returns only a receipt code and timestamp.
+
+Read [`docs/SECURITY_MODEL.md`](docs/SECURITY_MODEL.md) before applying this to an authority project.
+
+## Authority setup
+
+1. Create a trusted staff account through Supabase Auth.
+2. Bootstrap it as `administrator` through a protected SQL environment.
+3. Establish a reviewed verification workflow.
+4. Verify voters and assign them to individual elections.
+5. Create and review all election/contest/candidate data.
+6. Decide MFA, publication, result-release, notification, retention, and support policy.
+
+The exact commands and operating checklist are in [`docs/OPERATIONS_RUNBOOK.md`](docs/OPERATIONS_RUNBOOK.md).
+
+## Notification worker
+
+The Edge Function at [`supabase/functions/dispatch-election-reminders`](supabase/functions/dispatch-election-reminders/index.ts) queues deadline reminders and sends receipt-safe email through Resend. It requires server-side secrets and a protected scheduler; see the runbook. It never reads or sends a ballot choice.
 
 ## Quality checks
 
@@ -97,20 +90,16 @@ Detailed assumptions, RLS verification queries, and operational limitations are 
 flutter pub get
 flutter analyze
 flutter test
+supabase db reset
 ```
 
-The repository's original Firebase lockfile has intentionally been removed. `flutter pub get` creates a new lockfile for the Supabase dependency graph in your environment.
+A GitHub Actions quality-workflow template is at [`docs/github-actions-quality.yml.example`](docs/github-actions-quality.yml.example). Add it to `.github/workflows/quality.yml` after the repository GitHub App has workflow-write permission. The old Firebase lockfile was intentionally removed; run `flutter pub get` to create the current lockfile.
 
-## Research and design notes
+## Documentation
 
-[`docs/UX_REVIEW.md`](docs/UX_REVIEW.md) records the project audit, the applied UX/accessibility decisions, and the current official Flutter/Supabase references used for this rebuild.
-
-## Suggested production checklist
-
-- [ ] Replace the template Android/iOS/macOS bundle identifiers with IDs owned by the deploying authority.
-- [ ] Configure auth confirmation, password policy, rate limits, and approved redirect URLs.
-- [ ] Define an administrator-only identity verification workflow; only that workflow should set `profiles.verification_status = 'verified'`.
-- [ ] Add database/RLS tests and load tests for the expected election size.
-- [ ] Arrange independent penetration testing and database audit logging/monitoring.
-- [ ] Establish retention, incident response, accessibility accommodation, auditability, and election-certification procedures with the authority responsible for the election.
-- [ ] Replace fictional seed/demo records with independently verified ballot data.
+- [`docs/FEATURE_IMPLEMENTATION.md`](docs/FEATURE_IMPLEMENTATION.md) — capability matrix and non-code limits
+- [`docs/STATE_MANAGEMENT.md`](docs/STATE_MANAGEMENT.md) — Riverpod architecture
+- [`docs/SECURITY_MODEL.md`](docs/SECURITY_MODEL.md) — data separation, RLS, RPC, and verification matrix
+- [`docs/OPERATIONS_RUNBOOK.md`](docs/OPERATIONS_RUNBOOK.md) — authority/Edge Function/release operation steps
+- [`docs/UX_REVIEW.md`](docs/UX_REVIEW.md) — audit, accessibility, and UX decisions
+- [`docs/FIREBASE_TO_SUPABASE_MIGRATION.md`](docs/FIREBASE_TO_SUPABASE_MIGRATION.md) — legacy cutover plan

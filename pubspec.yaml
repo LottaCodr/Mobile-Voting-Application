@@ -1,15 +1,17 @@
 name: mobile_voting_application
 description: A privacy-first, accessible voter experience backed by Supabase.
 publish_to: 'none'
-version: 2.0.0+1
+version: 3.0.0+1
 
 environment:
-  sdk: '>=3.3.0 <4.0.0'
+  sdk: '>=3.7.0 <4.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
+  flutter_riverpod: ^3.4.2
+  qr_flutter: ^4.1.0
   supabase_flutter: ^2.17.1
 
 dev_dependencies:
