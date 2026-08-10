@@ -10,7 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
-  flutter_riverpod: ^3.4.2
+  flutter_riverpod: ^3.3.2
   qr_flutter: ^4.1.0
   supabase_flutter: ^2.17.1
 

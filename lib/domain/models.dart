@@ -1,8 +1,8 @@
-/// Immutable domain objects shared by the presentation and data layers.
-///
-/// The app deliberately has no model that joins a voter identity to a candidate
-/// choice. The server returns eligibility/submission metadata and aggregate
-/// results, never a voter-to-candidate history.
+// Immutable domain objects shared by the presentation and data layers.
+//
+// The app deliberately has no model that joins a voter identity to a candidate
+// choice. The server returns eligibility/submission metadata and aggregate
+// results, never a voter-to-candidate history.
 
 enum ElectionStatus {
   upcoming,

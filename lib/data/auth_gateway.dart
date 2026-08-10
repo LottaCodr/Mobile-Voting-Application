@@ -128,7 +128,7 @@ class SupabaseAuthGateway implements AuthGateway {
   @override
   Future<MfaStatus> getMfaStatus() async {
     try {
-      final dynamic assurance = await _client.auth.mfa.getAuthenticatorAssuranceLevel();
+      final dynamic assurance = _client.auth.mfa.getAuthenticatorAssuranceLevel();
       final factors = await listMfaFactors();
       return MfaStatus.fromValues(
         currentLevel: assurance.currentLevel,

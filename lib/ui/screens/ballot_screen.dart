@@ -360,7 +360,7 @@ class _ElectionPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DropdownButtonFormField<String>(
-      value: selectedElection.id,
+      initialValue: selectedElection.id,
       isExpanded: true,
       decoration: const InputDecoration(
         labelText: 'Assigned election',

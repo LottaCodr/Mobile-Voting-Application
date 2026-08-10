@@ -197,7 +197,7 @@ class _MfaScreenState extends ConsumerState<MfaScreen> {
                             child: Column(
                               children: <Widget>[
                                 DropdownButtonFormField<String>(
-                                  value: _selectedFactor?.id,
+                                  initialValue: _selectedFactor?.id,
                                   decoration: const InputDecoration(
                                     labelText: 'Authenticator',
                                     prefixIcon: Icon(Icons.phonelink_lock_outlined),

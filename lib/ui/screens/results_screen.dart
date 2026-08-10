@@ -140,7 +140,7 @@ class _ResultsBody extends ConsumerWidget {
 
     final streamed = ref.watch(liveResultsProvider(election.id));
     final fallback = ref.watch(resultsProvider(election.id));
-    final results = streamed.valueOrNull ?? fallback.valueOrNull;
+    final results = streamed.value ?? fallback.value;
     if (results == null && (streamed.isLoading || fallback.isLoading)) {
       return const LoadingState(label: 'Loading aggregate election results');
     }
@@ -237,7 +237,7 @@ class _ResultElectionPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DropdownButtonFormField<String>(
-      value: election.id,
+      initialValue: election.id,
       isExpanded: true,
       decoration: const InputDecoration(
         labelText: 'Assigned election',

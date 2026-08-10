@@ -52,10 +52,10 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
         ? ref.watch(auditEventsProvider)
         : null;
     final selectedElection =
-        elections.valueOrNull
+        elections.value
             ?.where((election) => election.id == _assignmentElectionId)
             .firstOrNull ??
-        elections.valueOrNull?.firstOrNull;
+        elections.value?.firstOrNull;
 
     return Scaffold(
       appBar: AppBar(
@@ -140,16 +140,16 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
                       'Verification does not automatically grant a ballot; assign a voter to a specific election after review.',
                 ),
                 const SizedBox(height: 14),
-                if (elections.valueOrNull?.isNotEmpty == true)
+                if (elections.value?.isNotEmpty == true)
                   DropdownButtonFormField<String>(
-                    value: selectedElection?.id,
+                    initialValue: selectedElection?.id,
                     isExpanded: true,
                     decoration: const InputDecoration(
                       labelText: 'Election for approved voter assignments',
                       prefixIcon: Icon(Icons.assignment_ind_outlined),
                     ),
                     items: <DropdownMenuItem<String>>[
-                      for (final election in elections.valueOrNull ?? const <Election>[])
+                      for (final election in elections.value ?? const <Election>[])
                         DropdownMenuItem<String>(value: election.id, child: Text(election.title)),
                     ],
                     onChanged: (value) => setState(() => _assignmentElectionId = value),
@@ -313,7 +313,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
 
   Future<void> _openCreateCandidate(BuildContext context, Election election) async {
     final contests = await ref.read(contestsProvider(election.id).future);
-    if (!mounted) return;
+    if (!context.mounted) return;
     final payload = await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
       useSafeArea: true,
@@ -709,8 +709,9 @@ class _CreateElectionSheetState extends State<_CreateElectionSheet> {
               const SizedBox(height: 12),
               FilledButton(
                 onPressed: () {
-                  if (!(_formKey.currentState?.validate() ?? false) || !_end.isAfter(_start))
+                  if (!(_formKey.currentState?.validate() ?? false) || !_end.isAfter(_start)) {
                     return;
+                  }
                   Navigator.of(context).pop(<String, dynamic>{
                     'title': _title.text.trim(),
                     'jurisdiction': _jurisdiction.text.trim(),
@@ -777,7 +778,7 @@ class _CreateContestSheetState extends State<_CreateContestSheet> {
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<ContestType>(
-            value: _type,
+            initialValue: _type,
             decoration: const InputDecoration(labelText: 'Contest type'),
             items: const <DropdownMenuItem<ContestType>>[
               DropdownMenuItem(value: ContestType.singleChoice, child: Text('Single choice')),
@@ -848,7 +849,7 @@ class _CreateCandidateSheetState extends State<_CreateCandidateSheet> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              value: _contestId,
+              initialValue: _contestId,
               decoration: const InputDecoration(labelText: 'Contest'),
               items: <DropdownMenuItem<String>>[
                 for (final contest in widget.contests)
