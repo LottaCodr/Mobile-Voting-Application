@@ -107,7 +107,8 @@ Deno.serve(async (request) => {
     let delivered = 0
     for (const notification of pending ?? []) {
       const { data: userData, error: userError } = await supabase.auth.admin.getUserById(notification.user_id)
-      if (userError || !userData.user?.email) continue
+      const userEmail = userData?.user?.email
+      if (userError || !userEmail) continue
 
       const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
@@ -117,7 +118,7 @@ Deno.serve(async (request) => {
         },
         body: JSON.stringify({
           from,
-          to: [userData.user.email],
+          to: [userEmail],
           subject: notification.title,
           text: notification.body,
         }),
