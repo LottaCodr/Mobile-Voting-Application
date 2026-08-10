@@ -1,35 +1,18 @@
-# Miscellaneous
-*.class
-*.log
-*.pyc
-*.swp
-.DS_Store
-.atom/
-.buildlog/
-.history
-.svn/
-migrate_working_dir/
-
-# IDEs
-*.iml
-*.ipr
-*.iws
-.idea/
-
-# JavaScript tooling (the previous Express mock server was removed)
+# JavaScript / Expo
 node_modules/
+.expo/
+web-build/
+dist/
 npm-debug.log*
+*.log
+.env
+.env.local
 
-# Flutter / Dart
-**/doc/api/
-**/ios/Flutter/.last_build_id
-.dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
-.packages
-.pub-cache/
-.pub/
-/build/
+# Editors and OS
+.DS_Store
+.idea/
+*.iml
+*.swp
 
 # Supabase local development
 supabase/.branches/
@@ -37,12 +20,3 @@ supabase/.temp/
 supabase/.env
 supabase/.env.*
 !supabase/.env.example
-
-# Symbolication and obfuscation
-app.*.symbols
-app.*.map.json
-
-# Android build outputs
-/android/app/debug
-/android/app/profile
-/android/app/release
