@@ -2,6 +2,29 @@
 
 A privacy-first React Native / Expo voter portal with a Supabase backend foundation. The app opens in a clearly labelled fictional **PRODUCT PREVIEW** when no public Supabase configuration is present. It is not certified for binding public elections.
 
+## Installing the expected version: `react-native@0.79.6`
+
+To install a specific version of React Native (for example, `0.79.6`), run:
+
+```bash
+npm install react-native@0.79.6
+```
+
+If you are using yarn:
+
+```bash
+yarn add react-native@0.79.6
+```
+
+You can verify the installed version with:
+
+```bash
+npm list react-native
+```
+
+> **Note:** This template is built around Expo, which typically manages the compatible React Native version automatically. Directly installing/changing `react-native` may cause version conflicts if it does not match your project's Expo SDK.  
+> Check your Expo version (in `package.json`) and refer to [Expo's React Native version compatibility table](https://docs.expo.dev/versions/latest/sdk/overview/#react-native-versions) before changing the `react-native` version.
+
 ## What changed
 
 This repository has been migrated from Flutter to a TypeScript React Native application:
