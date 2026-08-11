@@ -20,3 +20,8 @@ supabase/.temp/
 supabase/.env
 supabase/.env.*
 !supabase/.env.example
+
+# Expo generated / native projects (Continuous Native Generation)
+expo-env.d.ts
+/android
+/ios
