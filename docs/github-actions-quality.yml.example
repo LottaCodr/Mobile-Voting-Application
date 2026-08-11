@@ -9,19 +9,23 @@ permissions:
   contents: read
 
 jobs:
-  flutter:
-    name: Flutter analyze and test
+  app:
+    name: Expo app typecheck, lint and export
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
+      - uses: actions/setup-node@v4
         with:
-          channel: stable
-          cache: true
-      - run: flutter pub get
-      - run: dart format --line-length 100 --set-exit-if-changed lib test
-      - run: flutter analyze
-      - run: flutter test
+          # Expo SDK 57 / React Native 0.86 require Node 22.13 or newer.
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - name: Verify the app bundles for every platform
+        run: npx expo export --platform all
+      - name: Expo dependency and config checks
+        run: npx expo-doctor
 
   supabase:
     name: Supabase migration smoke test

@@ -2,32 +2,23 @@
 
 A privacy-first React Native / Expo voter portal with a Supabase backend foundation. The app opens in a clearly labelled fictional **PRODUCT PREVIEW** when no public Supabase configuration is present. It is not certified for binding public elections.
 
-## Installing the expected version: `react-native@0.79.6`
+## Current stack
 
-To install a specific version of React Native (for example, `0.79.6`), run:
+| Package | Version |
+| --- | --- |
+| Expo SDK | 57 |
+| React Native | 0.86 |
+| React | 19.2 |
+| Expo Router | 57 |
+| TypeScript | 6.0 |
+| ESLint | 9 (`eslint-config-expo` 57) |
+| Supabase JS | 2.x |
 
-```bash
-npm install react-native@0.79.6
-```
+Node.js **22.13 or newer** is required by Expo SDK 57 / React Native 0.86.
 
-If you are using yarn:
+## What this app is
 
-```bash
-yarn add react-native@0.79.6
-```
-
-You can verify the installed version with:
-
-```bash
-npm list react-native
-```
-
-> **Note:** This template is built around Expo, which typically manages the compatible React Native version automatically. Directly installing/changing `react-native` may cause version conflicts if it does not match your project's Expo SDK.  
-> Check your Expo version (in `package.json`) and refer to [Expo's React Native version compatibility table](https://docs.expo.dev/versions/latest/sdk/overview/#react-native-versions) before changing the `react-native` version.
-
-## What changed
-
-This repository has been migrated from Flutter to a TypeScript React Native application:
+A TypeScript React Native application (previously Flutter):
 
 - **Expo + React Native** UI, with mobile-first safe-area layout and accessible tab controls
 - Full fictional demo flow: dashboard, multi-contest ballot, candidate search/platform details, review acknowledgement, receipt-safe submission view, results, updates, and profile preferences
@@ -57,8 +48,10 @@ Never place a Supabase `service_role` key in `.env`, source code, or an Expo bui
 ## Checks
 
 ```bash
-npm run typecheck
-npm run lint
+npm run typecheck   # tsc --noEmit
+npm run lint        # eslint
+npm run doctor      # expo-doctor: dependency/config validation
+npx expo export --platform all   # verify web, iOS and Android bundles build
 ```
 
 ## Backend and operational documentation
