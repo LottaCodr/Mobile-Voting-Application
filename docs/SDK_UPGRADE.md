@@ -49,6 +49,14 @@ match exactly what `expo install --fix` would pick.
 
 ## Configuration changes
 
+- `index.js` + `package.json` `main`: Expo Router now boots through a project
+  entry that calls `require.context('./app')` with a string literal. This
+  avoids the Metro `EXPO_ROUTER_APP_ROOT` / `require.context` crash that
+  appears when a globally installed Expo CLI (a different SDK) transforms
+  `node_modules/expo-router/_ctx.android.js`.
+- `metro.config.js`: extends `expo/metro-config` so Metro context modules
+  stay enabled for Expo Router.
+- `babel.config.js`: sets `EXPO_ROUTER_APP_ROOT` if the CLI never injects it.
 - `app.json`: added `newArchEnabled`, Android `edgeToEdgeEnabled` and
   `predictiveBackGestureEnabled`, and enabled the React Compiler
   (`experiments.reactCompiler`). App version bumped to 4.0.0.
@@ -94,8 +102,10 @@ deliberately not done.
 The upgrade is verified as far as bundling and static analysis can go. A
 maintainer should still:
 
-1. Run the app on a physical iOS and Android device (Expo Go for SDK 57, or a
-   development build) and walk the full ballot → review → submit → receipt flow.
+1. Run the app on a physical iOS and Android device. Play Store Expo Go does
+   not include SDK 57 yet — install the APK from
+   [docs/RUNNING_ON_ANDROID.md](RUNNING_ON_ANDROID.md), then walk the full
+   ballot → review → submit → receipt flow.
 2. Re-test accessibility: screen-reader labels, 48 px targets and large text
    scaling, especially around the migrated safe-area layout.
 3. Check Android edge-to-edge rendering, which changed in React Native 0.86.

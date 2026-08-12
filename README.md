@@ -31,9 +31,12 @@ A TypeScript React Native application (previously Flutter):
 npm install
 npm start
 # or: npm run android | npm run ios | npm run web
+# first run after a CLI/SDK change: npm run start:clear
 ```
 
-Use Expo Go for device testing or an Android/iOS simulator. The web target is useful for UI review, but a native target should be included in accessibility and release testing.
+**Do not run `expo start`.** That uses a globally installed CLI from another SDK and will crash Metro (`EXPO_ROUTER_APP_ROOT`, `onModeChange` codegen). Uninstall it with `npm uninstall -g expo` and always use `npm start`.
+
+Play Store Expo Go is still an older SDK and will reject this project. Install the official [Expo Go 57 Android APK](https://github.com/expo/expo-go-releases/releases/download/Expo-Go-57.0.3/Expo-Go-57.0.3.apk), then scan the QR code. Full device steps: [docs/RUNNING_ON_ANDROID.md](docs/RUNNING_ON_ANDROID.md).
 
 ## Connect Supabase
 

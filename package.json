@@ -2,15 +2,17 @@
   "name": "civicvote",
   "version": "4.0.0",
   "private": true,
-  "main": "expo-router/entry",
+  "main": "index.js",
   "engines": {
     "node": ">=22.13.0"
   },
   "scripts": {
-    "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web",
+    "start": "node ./scripts/expo-start.js",
+    "android": "node ./scripts/expo-start.js --android",
+    "ios": "node ./scripts/expo-start.js --ios",
+    "web": "node ./scripts/expo-start.js --web",
+    "start:clear": "node ./scripts/expo-start.js --clear",
+    "start:tunnel": "node ./scripts/expo-start.js --tunnel",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "doctor": "expo-doctor"
