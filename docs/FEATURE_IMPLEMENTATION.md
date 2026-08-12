@@ -1,49 +1,56 @@
 # Feature implementation matrix
 
-This document records the implemented product capabilities and the operational capabilities that still require an election authority to configure or approve. It is intentionally explicit about the boundary between code and election governance.
+This matrix distinguishes the working React Native product preview and Supabase foundation from the election-authority work still required for official use.
 
 ## Implemented in this repository
 
 | Capability | Implementation |
 | --- | --- |
-| Reactive state management | Riverpod 3 `NotifierProvider`, `FutureProvider`, `StreamProvider`, provider invalidation, immutable domain models, and testable repository injection. |
-| Secure sign-in | Supabase email/password sign-up, confirmation-aware sign-in, password recovery, auth-state handling with stream error handling, and no password storage in profile tables. |
-| Assigned ballots | `ballot_assignments` binds an eligible voter to a particular election. `get_my_elections()` returns only that voter’s authority-assigned ballot feed. |
-| Multi-contest ballots | `contests`, contest-specific candidates, a Riverpod ballot draft, progress feedback, one choice per required contest, and a single full-ballot confirmation flow. |
-| Eligibility enforcement | `submit_ballot()` checks authenticated identity, verified profile, eligible assignment, election time/status, all required contests, candidate membership, and duplicate submission in one transaction. |
-| MFA-aware voting | Election-level `requires_mfa`, server-side AAL2 check, TOTP authenticator setup/verification interface, QR code setup, and session assurance status. |
-| Receipt-safe recovery | `get_my_ballot_status()` returns assignment/submission state, timestamp, and receipt code only. It never returns a choice. This handles uncertain network outcomes safely. |
-| Privacy-improved storage | New `anonymous_votes` has no voter id, assignment id, or receipt linkage. Assignment metadata stores only submitted/not-submitted and the receipt. |
-| Results | Aggregate-only snapshots, contest-level ranking, publication gate, StreamProvider-based live result updates when Supabase Realtime is enabled, and manual refresh fallback. |
-| Administration | Role-aware authority workspace: pending verification queue, voter-to-election assignment, election creation/status/publication/MFA/result controls, contest creation, candidate creation, and recent audit activity. |
-| Audit | `audit_events` records authority actions and ballot submission events without candidate/contest selections. Auditor/admin-only retrieval is exposed through a safe RPC. |
-| Notifications | User preferences, private in-app notification feed, receipt-safe verification/submission notices, and a server-side Supabase Edge Function for deadline emails. |
-| Accessibility | Semantic labels, 48 px controls, high-contrast status content, text-scale-safe scrolling layouts, keyboard-friendly Material controls, visible loading/error/empty states, and accessible candidate/receipt feedback. |
-| Delivery quality | Flutter widget/unit tests, a Supabase reset smoke-test plan, secret-scan configuration, and a ready-to-enable GitHub Actions workflow template. |
+| Research-led voter journey | Readiness dashboard → pre-ballot orientation → one contest per step → full review → separate cast confirmation → choice-free receipt. |
+| Responsive React Native UI | Expo SDK 57, TypeScript, Expo Router, mobile bottom navigation, wide-screen navigation rail, focused ballot layout, and safe-area handling. |
+| Accessible interaction | Semantic roles/states, labelled icon controls, large touch targets, screen-reader progress, visible selected states, text scale preference, stronger contrast preference, reduced motion, and no gesture-only ballot controls. |
+| Neutral ballot presentation | Candidates/options have equal card dimensions, typography, initials, radio state, details control, and authority-defined ordering; no portrait or party-logo salience. |
+| Multi-contest ballot | Ordered contests, one choice per contest, explicit intentional undervote, in-memory draft progress, direct edit from review, and one full-ballot confirmation. |
+| Privacy-conscious draft | Draft selections are never persisted to AsyncStorage and are cleared after confirmed submission. Preferences, not choices, are persisted. |
+| Supabase submission | `submit_ballot()` remains the only client submission route. The UI waits for its response and does not optimistically claim success. |
+| Eligibility enforcement | The RPC checks identity, election window, profile verification, ballot assignment, MFA policy, candidate membership, required-contest rules where configured, and duplicate submission in one transaction. |
+| Intentional undervote | Public-election fixtures set contests optional and the ballot lets a voter explicitly leave a contest blank. Authorities can opt a contest into mandatory response only when governing rules permit it. |
+| Receipt-safe recovery | Receipt UI and `get_my_ballot_status()` contain assignment/submission state, timestamp, and receipt only — never a candidate or contest selection. |
+| Choice separation | `anonymous_votes` has election/contest/candidate/time but no voter, assignment, or receipt linkage. Assignment metadata stores submission status and receipt. |
+| Publication-gated results | Open-election totals remain hidden. The preview shows only completed, authority-published aggregate results. |
+| Receipt-safe updates | Election, verification, security, and result notices never reveal candidate selections. |
+| User safeguards | Product-preview labelling, help path, privacy explanations, error state, lost-response-safe wording, and explicit certification boundary. |
+| Quality checks | Strict TypeScript, Expo ESLint, Expo Doctor, and Expo multi-platform export commands. |
+
+## Backend capabilities present but not yet wired to the preview UI
+
+The Supabase schema includes authority roles, voter verification queues, assignment administration, election/contest/candidate creation, result publication controls, notification preferences, audit events, and a deadline-reminder Edge Function. The redesigned voter UI intentionally does not expose an administrator workspace inside the same focused experience.
+
+A production implementation should add a separate role-gated authority application or route group rather than mixing privileged controls into the voter ballot.
 
 ## Required authority configuration
 
-These features are implemented as configuration points but cannot be safely guessed by the app:
-
-1. **First administrator bootstrap** – add the first trusted account to `public.user_roles` using a protected SQL session or an authority-owned server process.
-2. **Identity review process** – use the authority workspace or an audited server workflow to set `verification_status`; do not self-verify from the client.
-3. **Ballot assignment policy** – assign only voters legally eligible for each election. Verification alone does not create an assignment.
-4. **MFA policy** – turn on `requires_mfa` for elections where a second factor is required. Ensure the authority supports authenticators and recovery procedures.
-5. **Publication policy** – decide whether each election is public, when results are visible, whether live aggregates are lawful, and when an election may change status.
-6. **Email delivery** – configure the Edge Function secrets and a verified Resend sender, then schedule the function. See [`OPERATIONS_RUNBOOK.md`](OPERATIONS_RUNBOOK.md).
-7. **Mobile deep links** – register production iOS/Android URL schemes and Supabase redirect URLs before enabling password recovery.
-8. **Release signing** – replace `com.example` application identifiers, configure Android/iOS signing, and distribute through the authority’s approved channels.
+1. **Administrator bootstrap** — add the first trusted account from a protected environment.
+2. **Identity review** — define the authoritative voter-roll and evidence process; never permit client self-verification.
+3. **Ballot assignment** — assign only legally eligible voters to the correct ballot style.
+4. **Contest policy** — keep public contests optional where undervotes are lawful; explicitly require a response only for election types whose governing rules allow it.
+5. **MFA and recovery** — determine authenticator support, fallback, lost-device, and assisted recovery processes.
+6. **Publication policy** — decide when results may be released and whether interim turnout (not candidate totals) is lawful.
+7. **Email delivery** — configure Edge Function secrets, a verified sender, scheduling, rate limits, and failure handling.
+8. **Deep links and releases** — register production schemes, signing keys, store identities, update policy, and approved distribution.
+9. **Real translated ballots** — supply authority-approved text and audio for every required language; do not machine-translate official ballot content in the client.
 
 ## Important non-code requirements
 
-No software repository can implement these unilaterally:
+No repository can unilaterally deliver:
 
 - election-law compliance and certification;
-- independent penetration/security review;
-- privacy impact assessment and retention policy;
-- verified voter-roll source and identity assurance policy;
-- accessible support, recovery, and dispute-resolution processes;
-- independent audit, monitoring, backup/restore, and incident response;
-- a jurisdiction-approved cryptographic ballot-secrecy protocol if the simple server-side separation model is insufficient.
+- malware-safe voter-owned devices or coercion-free remote environments;
+- independent penetration, privacy, accessibility, and cryptographic review;
+- software independence or a voter-verifiable paper audit trail;
+- a jurisdiction-approved E2E-verifiable protocol and verifier ecosystem;
+- verified voter-roll governance and identity assurance;
+- accessible support, recovery, complaint, and dispute-resolution processes;
+- independent audit, monitoring, backup/restore, recount, and incident response.
 
-Do not represent the demo data or this implementation as an official election until those requirements are completed.
+See [MOBILE_ELECTORAL_VOTING_RESEARCH.md](MOBILE_ELECTORAL_VOTING_RESEARCH.md) and [SECURITY_MODEL.md](SECURITY_MODEL.md).

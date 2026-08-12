@@ -1,1 +1,42 @@
-export const colors = { navy: '#102A43', blue: '#1D5FD0', teal: '#007C6C', canvas: '#F7F9FC', surface: '#FFFFFF', muted: '#627D98', border: '#D9E2EC', gold: '#B7791F', red: '#B42318', tealPale: '#E6F6F3', bluePale: '#EAF2FF', goldPale: '#FFF8E1' } as const;
+export const colors = {
+  ink: '#11233F',
+  navy: '#11233F',
+  navyDeep: '#09172C',
+  blue: '#2F64E1',
+  blueDark: '#1F4DB8',
+  bluePale: '#EDF3FF',
+  blueSoft: '#DCE8FF',
+  teal: '#087A6B',
+  tealPale: '#E7F6F2',
+  canvas: '#F3F6FA',
+  surface: '#FFFFFF',
+  surfaceMuted: '#F8FAFC',
+  muted: '#5E6D82',
+  subtle: '#8794A7',
+  border: '#DDE4EE',
+  borderStrong: '#C5D0DF',
+  gold: '#9A5A05',
+  goldPale: '#FFF5DF',
+  red: '#A33B30',
+  redPale: '#FFF0EE',
+  lilacPale: '#F3EEFF',
+  lilac: '#7546C9',
+  scrim: 'rgba(7, 18, 36, 0.58)',
+} as const;
+
+export const shadows = {
+  card: {
+    shadowColor: '#10233F',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.07,
+    shadowRadius: 14,
+    elevation: 2,
+  },
+  floating: {
+    shadowColor: '#0A1830',
+    shadowOffset: { width: 0, height: 9 },
+    shadowOpacity: 0.16,
+    shadowRadius: 22,
+    elevation: 8,
+  },
+} as const;

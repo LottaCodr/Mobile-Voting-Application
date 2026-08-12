@@ -10,16 +10,16 @@ supabase link --project-ref <staging>
 supabase db push
 ```
 
-Run Flutter with only public client configuration:
+Run Expo with only public client configuration:
 
 ```bash
-flutter run \
-  --dart-define=SUPABASE_URL=https://your-project.supabase.co \
-  --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_... \
-  --dart-define=PASSWORD_RESET_REDIRECT=io.civicvote.app://reset-callback/
+cp .env.example .env
+# EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+# EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
+npm start -- --clear
 ```
 
-Never put `SUPABASE_SERVICE_ROLE_KEY`, Resend credentials, database passwords, voter identity evidence, or authority signing credentials in Flutter, Git, or CI logs.
+Never put `SUPABASE_SERVICE_ROLE_KEY`, Resend credentials, database passwords, voter identity evidence, or authority signing credentials in the React Native client, Git, Expo public environment variables, or CI logs.
 
 ## 2. Bootstrap the first administrator
 
@@ -82,14 +82,14 @@ The function queues opening/deadline reminders for eligible, unsubmitted assignm
 
 ## 6. Realtime, monitoring, and incident response
 
-The migration adds `result_snapshots` and `notifications` to `supabase_realtime` where the publication exists. Confirm replication in the Dashboard. If Realtime is unavailable, the Flutter UI continues to offer manual refresh.
+The migration adds `result_snapshots` and `notifications` to `supabase_realtime` where the publication exists. Confirm replication in the Dashboard. The current redesigned preview uses fictional local result/update feeds; production wiring must provide manual refresh and clear unavailable states when Realtime is offline.
 
 Before launch, establish:
 
 - database backup/restore exercises;
 - Supabase auth, function, RPC, and database alerting;
 - authority audit-log export/retention;
-- auth rate limits, CAPTCHA/bot controls, SMTP limits, and WAF rules where appropriate;
+- auth rate limits, accessible abuse/bot controls, SMTP limits, and WAF rules where appropriate;
 - incident severity, escalation, communication, and election pause procedures;
 - test accounts for a full dress rehearsal including poor connectivity and a lost-response submission recovery.
 
@@ -98,9 +98,11 @@ Before launch, establish:
 Run in a non-production project before every release. After GitHub grants workflow-write access to the automation app, copy `docs/github-actions-quality.yml.example` to `.github/workflows/quality.yml` to automate the same checks:
 
 ```bash
-flutter pub get
-flutter analyze
-flutter test
+npm ci
+npm run typecheck
+npm run lint
+npm run doctor
+npx expo export --platform all
 supabase db reset
 ```
 
@@ -108,7 +110,7 @@ Also test manually:
 
 - an unverified user cannot submit;
 - a verified but unassigned user cannot submit;
-- an assigned user can submit each required contest once;
+- an assigned user can submit each configured required contest once, while optional contests may be left blank;
 - an MFA-required election rejects AAL1 and accepts AAL2;
 - a lost client response can be reconciled with `get_my_ballot_status`;
 - results/notifications never reveal a candidate selection;

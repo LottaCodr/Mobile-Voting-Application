@@ -30,9 +30,9 @@ Ballot choices are deliberately **not persisted on-device** for offline replay. 
 3. AAL2/MFA is present when the election requires it.
 4. The profile is authority-verified.
 5. A matching `ballot_assignments` row is eligible and not already submitted.
-6. Every required contest has exactly one choice.
-7. Every candidate belongs to the supplied election and contest.
-8. Anonymous vote rows are inserted.
+6. Every contest explicitly configured as required has exactly one choice; optional public-election contests may be intentionally left blank as an undervote.
+7. Every supplied candidate belongs to the supplied election and contest.
+8. Anonymous vote rows are inserted only for supplied selections.
 9. The assignment changes to `submitted`, a receipt is generated, and a receipt-safe audit/notification event is recorded.
 
 A database transaction rolls all of that back if any step fails.
@@ -95,7 +95,7 @@ Automate these against a local/staging Supabase project:
 | Unverified authenticated user | Cannot submit, even if assigned. |
 | Verified but unassigned user | Cannot submit or discover another user’s assigned ballot. |
 | Verified assigned AAL1 user | Rejected when `requires_mfa = true`. |
-| Verified assigned AAL2 user | Can submit exactly one complete ballot. |
+| Verified assigned AAL2 user | Can submit exactly one reviewed ballot, including lawful optional-contest undervotes. |
 | Same voter after submit | Receives only submitted status/receipt; a second submission is rejected. |
 | Candidate from wrong contest/election | Rejected. |
 | Verifier | Can change verification/assignment but cannot self-grant administrator role. |
@@ -105,7 +105,7 @@ Automate these against a local/staging Supabase project:
 ## Operational controls outside code
 
 - Bootstrap authority roles only from a protected environment.
-- Keep service-role secrets in Supabase Edge Functions or an approved server, never Flutter.
+- Keep service-role secrets in Supabase Edge Functions or an approved server, never the React Native client or Expo public environment.
 - Require independent review before enabling official voting.
 - Define retention/deletion policy for profiles, assignments, audit events, notifications, and backups.
 - Monitor failed auth/MFA/RPC attempts, authority changes, and suspicious assignment patterns.

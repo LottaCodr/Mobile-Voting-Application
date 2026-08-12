@@ -2,7 +2,7 @@
   "expo": {
     "name": "CivicVote",
     "slug": "civicvote",
-    "version": "4.0.0",
+    "version": "4.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "scheme": "civicvote",
