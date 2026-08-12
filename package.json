@@ -2,7 +2,7 @@
   "name": "civicvote",
   "version": "4.0.0",
   "private": true,
-  "main": "expo-router/entry",
+  "main": "index.js",
   "engines": {
     "node": ">=22.13.0"
   },
@@ -11,6 +11,7 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
+    "start:clear": "expo start --clear",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "doctor": "expo-doctor"

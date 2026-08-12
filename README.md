@@ -31,7 +31,10 @@ A TypeScript React Native application (previously Flutter):
 npm install
 npm start
 # or: npm run android | npm run ios | npm run web
+# first run after a CLI/SDK change: npm run start:clear
 ```
+
+Always start the app through `npm start` (the local Expo CLI in `node_modules`). A globally installed `expo` from another SDK will fail Android/iOS bundling with `EXPO_ROUTER_APP_ROOT` / `require.context` errors.
 
 Use Expo Go for device testing or an Android/iOS simulator. The web target is useful for UI review, but a native target should be included in accessibility and release testing.
 
