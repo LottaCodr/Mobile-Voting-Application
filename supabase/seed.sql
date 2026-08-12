@@ -69,7 +69,7 @@ values
     'single_choice',
     1,
     1,
-    true
+    false
   ),
   (
     '40000000-0000-0000-0000-000000000004',
@@ -79,7 +79,7 @@ values
     'referendum',
     1,
     2,
-    true
+    false
   ),
   (
     '40000000-0000-0000-0000-000000000002',
@@ -89,7 +89,7 @@ values
     'referendum',
     1,
     1,
-    true
+    false
   ),
   (
     '40000000-0000-0000-0000-000000000003',
@@ -99,7 +99,7 @@ values
     'single_choice',
     1,
     1,
-    true
+    false
   )
 on conflict (id) do update set
   title = excluded.title,

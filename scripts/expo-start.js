@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* global __dirname */
 /**
  * Always start the project-local Expo CLI. A globally installed `expo`
  * (different SDK) is what produced:
