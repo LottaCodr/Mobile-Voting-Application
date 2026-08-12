@@ -102,8 +102,10 @@ deliberately not done.
 The upgrade is verified as far as bundling and static analysis can go. A
 maintainer should still:
 
-1. Run the app on a physical iOS and Android device (Expo Go for SDK 57, or a
-   development build) and walk the full ballot → review → submit → receipt flow.
+1. Run the app on a physical iOS and Android device. Play Store Expo Go does
+   not include SDK 57 yet — install the APK from
+   [docs/RUNNING_ON_ANDROID.md](RUNNING_ON_ANDROID.md), then walk the full
+   ballot → review → submit → receipt flow.
 2. Re-test accessibility: screen-reader labels, 48 px targets and large text
    scaling, especially around the migrated safe-area layout.
 3. Check Android edge-to-edge rendering, which changed in React Native 0.86.

@@ -34,9 +34,9 @@ npm start
 # first run after a CLI/SDK change: npm run start:clear
 ```
 
-Always start the app through `npm start` (the local Expo CLI in `node_modules`). A globally installed `expo` from another SDK will fail Android/iOS bundling with `EXPO_ROUTER_APP_ROOT` / `require.context` errors.
+**Do not run `expo start`.** That uses a globally installed CLI from another SDK and will crash Metro (`EXPO_ROUTER_APP_ROOT`, `onModeChange` codegen). Uninstall it with `npm uninstall -g expo` and always use `npm start`.
 
-Use Expo Go for device testing or an Android/iOS simulator. The web target is useful for UI review, but a native target should be included in accessibility and release testing.
+Play Store Expo Go is still an older SDK and will reject this project. Install the official [Expo Go 57 Android APK](https://github.com/expo/expo-go-releases/releases/download/Expo-Go-57.0.3/Expo-Go-57.0.3.apk), then scan the QR code. Full device steps: [docs/RUNNING_ON_ANDROID.md](docs/RUNNING_ON_ANDROID.md).
 
 ## Connect Supabase
 
